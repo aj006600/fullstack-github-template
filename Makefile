@@ -13,9 +13,17 @@ STACK   := -f compose.yaml -f deploy/compose.$(EXPOSE).yaml --env-file env/.env.
 # APP_NAME 必須進到 compose 的插值環境：漏了只是 warning、退出碼 0，DOMAIN 會靜默變成 "dev..localhost"
 PROJECT := COMPOSE_PROJECT_NAME=$(APP_NAME)-$(ENV) APP_NAME=$(APP_NAME)
 
-# 打錯 EXPOSE/ENV 時給明確訊息，而不是 compose 的 "no such file" 或靜靜載入到別的環境
-guard = @test -f deploy/compose.$(EXPOSE).yaml || { echo "EXPOSE=$(EXPOSE) 無效。可用：ports | proxy"; exit 1; }; \
-	test -f env/.env.$(ENV) || { echo "ENV=$(ENV) 無效。可用：dev | qas | prod"; exit 1; }
+# 可用值一律從檔案系統推導，不手寫清單：新增 env 檔或 deploy override 後漏改清單不會報錯，
+# check 只會安靜地少驗一個組合。.local 是覆蓋層，不是一個 environment。
+ENVS    := $(patsubst env/.env.%,%,$(filter-out %.local,$(wildcard env/.env.*)))
+EXPOSES := $(patsubst deploy/compose.%.yaml,%,$(wildcard deploy/compose.*.yaml))
+ENVS_TXT    := $(shell echo "$(ENVS)" | sed 's/ / | /g')
+EXPOSES_TXT := $(shell echo "$(EXPOSES)" | sed 's/ / | /g')
+
+# 打錯 EXPOSE/ENV 時給明確訊息，而不是 compose 的 "no such file" 或靜靜載入到別的環境。
+# 比對推導出的清單而非 test -f：否則 ENV=dev.local 這種 check 從不驗證的組合會過關。
+guard = @test -n "$(filter $(EXPOSE),$(EXPOSES))" || { echo "EXPOSE=$(EXPOSE) 無效。可用：$(EXPOSES_TXT)"; exit 1; }; \
+	test -n "$(filter $(ENV),$(ENVS))" || { echo "ENV=$(ENV) 無效。可用：$(ENVS_TXT)"; exit 1; }
 
 .PHONY: help init dev dev-down test lint format check down deploy ps
 
@@ -33,8 +41,8 @@ help:
 	@echo "  make deploy  EXPOSE=… ENV=… IMAGE=… TAG=…   拉 CI 測過的映像，不重 build"
 	@echo "  make down    EXPOSE=… ENV=…                 停止該環境"
 	@echo ""
-	@echo "  EXPOSE = ports | proxy      怎麼對外曝露：綁主機埠 / 掛共用 reverse proxy   (預設 $(EXPOSE))"
-	@echo "  ENV    = dev | qas | prod                                                 (預設 $(ENV))"
+	@echo "  EXPOSE = $(EXPOSES_TXT)      怎麼對外曝露：綁主機埠 / 掛共用 reverse proxy   (預設 $(EXPOSE))"
+	@echo "  ENV    = $(ENVS_TXT)                                                 (預設 $(ENV))"
 	@echo ""
 	@echo "Inspection"
 	@echo "  make ps                           正在跑的 container（名稱 / 狀態 / 埠）"
@@ -93,17 +101,20 @@ format:
 
 # ── Config check ──
 # 渲染每種 EXPOSE × ENV（不啟動容器），只驗兩件「錯了不會當場報錯」的事：
-#   1. 三個 environment 的 HTTP_PORT 互異——撞埠要到部署當下才炸。
+#   1. 各 environment 的 HTTP_PORT 互異——撞埠要到部署當下才炸。
 #   2. 沒有未解析的變數——漏傳 APP_NAME 會讓 DOMAIN 變成 "dev..localhost"，而 compose
 #      只給 warning、退出碼 0。
 # 刻意不斷言 project 名與 router 名：它們是 $(APP_NAME)-$(ENV) 串接出來的，測了等於測串接。
+# 先擋清單為空：否則 sed 會讀 stdin 卡住，而 for 迴圈跑零次卻報綠燈。
 check:
-	@dup=$$(sed 's/#.*//' env/.env.* | grep '^HTTP_PORT=' | tr -d ' ' | sort | uniq -d); \
+	@test -n "$(ENVS)" && test -n "$(EXPOSES)" || { \
+	  echo "FAIL: 找不到 env/.env.* 或 deploy/compose.*.yaml"; exit 1; }
+	@dup=$$(sed 's/#.*//' $(addprefix env/.env.,$(ENVS)) | grep '^HTTP_PORT=' | tr -d ' ' | sort | uniq -d); \
 	test -z "$$dup" || { \
 	  echo "FAIL: 多個 environment 用了同一個 HTTP_PORT，同機並存時會撞埠："; \
 	  echo "  $$dup"; exit 1; }
 	@fail=0; \
-	for e in ports proxy; do for v in dev qas prod; do \
+	for e in $(EXPOSES); do for v in $(ENVS); do \
 	  out=$$(COMPOSE_PROJECT_NAME=$(APP_NAME)-$$v APP_NAME=$(APP_NAME) docker compose \
 	         -f compose.yaml -f deploy/compose.$$e.yaml --env-file env/.env.$$v config 2>&1); \
 	  if [ $$? -ne 0 ]; then \
