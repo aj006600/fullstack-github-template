@@ -1,4 +1,4 @@
-# fullstack-docker-template-multienv
+# fullstack-github-template
 
 ## Conventions
 

@@ -50,8 +50,9 @@ help:
 # >>> init（make init 會刪掉這整段，不要移除這兩行標記）
 # ── Project init（一次性）──
 # 對 git 追蹤的檔案全跑，不維護檔案清單——之後新增的檔案自動涵蓋，不會靜默漏改。
-# 兩條規則的順序不能反：先換長的，否則 "fullstack-docker-template-multienv" 會先被短規則
-# 切成 "my-app-docker-template-multienv"。
+# 兩條規則的順序不能反：先換長的，否則 "fullstack-github-template" 會先被短規則
+# 切成 "my-app-github-template"。
+# 長規則寫死 template 名：repo 改名時漏改這裡不會報錯，只會在新專案裡留下舊名。
 # /i 不分大小寫：展示用的 "Fullstack Multi-env"（頁面 title、<h1>、pyproject description）
 # 只比對小寫會漏掉。
 # perl 而非 sed：BSD 要 -i ''、GNU 要 -i，語法不相容；perl -pi 兩邊一致且都內建。
@@ -60,7 +61,7 @@ init:
 	@test "$(APP_NAME)" != "fullstack" || { echo "用法：make init APP_NAME=my-app"; exit 1; }
 	@echo "$(APP_NAME)" | grep -qE '^[a-z][a-z0-9-]*$$' || { echo "APP_NAME 只能是小寫英數與連字號、開頭為字母——它會用在 image 名、compose project 名與 domain。"; exit 1; }
 	@git diff --quiet && git diff --cached --quiet || { echo "工作區有未提交的改動。請先 commit 或 stash——init 會改動多個檔案，乾淨的工作區才能用 git checkout . 還原。"; exit 1; }
-	@git ls-files -z | xargs -0 perl -pi -e 's/fullstack-docker-template-multienv/$(APP_NAME)/gi; s/fullstack/$(APP_NAME)/gi'
+	@git ls-files -z | xargs -0 perl -pi -e 's/fullstack-github-template/$(APP_NAME)/gi; s/fullstack/$(APP_NAME)/gi'
 	@rm -rf CLAUDE.md CONTEXT.md docs/agents docs/adr docs/cicd.md docs/concepts.md docs/roadmap.md
 	@perl -0777 -pi -e 's/^# >>> init.*?^# <<< init.*?\n\n//ms' Makefile
 	@perl -0777 -pi -e 's/^\t\@echo "Setup.*?\n\t\@echo ""\n//ms; s/^\.PHONY: help init /.PHONY: help /m' Makefile
