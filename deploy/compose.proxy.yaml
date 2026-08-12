@@ -11,7 +11,9 @@ services:
       # router/service 名用 compose project 名（<app>-<env>）。同一份 proxy 會同時服務
       # 多個 app 的多個 environment，只用 environment 區分的話，另一個 app 的 dev
       # 會註冊同名 router 並互相覆蓋——兩邊都起得來、都不報錯，其中一個網址靜默失效。
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.rule=Host(`${DOMAIN}`)"
+      # DOMAIN 不給預設值：空的 Host 規則同樣是「起得來、不報錯、網址不通」。
+      # COMPOSE_PROJECT_NAME 不必防（compose 沒收到就用資料夾名，永遠非空）。
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.rule=Host(`${DOMAIN:?請在 env/.env.<env> 設定}`)"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.entrypoints=web"
       - "traefik.http.services.${COMPOSE_PROJECT_NAME}-frontend.loadbalancer.server.port=80"
 
