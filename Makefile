@@ -1,6 +1,6 @@
 # 執行期的名字都從這行流出去：compose project 名、本機 image 名、proxy router 名、DOMAIN。
-# 但 README 標題、頁面 title、pyproject description 沒有插值能力，是寫死的——改這行動不到，
-# 要 make init 才會一起換。
+# 但頁面 title、pyproject description 沒有插值能力，是寫死的——改這行動不到，要 make init
+# 才會一起換。
 APP_NAME := fullstack
 
 DEV := -f compose.yaml -f compose.dev.yaml

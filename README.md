@@ -25,7 +25,7 @@ make init APP_NAME=my-app
 ```
 
 它會把 template 的名字換成 `my-app`——container 與 network 名、本機 build 的 image 名、
-reverse proxy 的 router 名、`DOMAIN`，以及 README 標題、頁面 title 這些沒有插值能力的地方。
+reverse proxy 的 router 名、`DOMAIN`，以及頁面 title 這種沒有插值能力的地方。
 同時移除 `make init` 自己，以及只服務於「蓋這個 template」的東西——`CLAUDE.md`、`docs/agents/`、
 `CONTEXT.md`、`docs/{concepts,cicd,roadmap}.md`、`docs/adr/`，並把這份 README 換成指向 `docs/` 的骨架
 （`docs/development.md` 與 `docs/deployment.md` 留著）。
