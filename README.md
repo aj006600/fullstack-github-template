@@ -89,8 +89,10 @@ frontend 綁到主機的 `HTTP_PORT`（各 environment 不同埠，可同機並�
 ├── env/{.env.dev,.env.qas,.env.prod}   # 各環境的非機密設定（機密走同名 .local，不進版控）
 ├── Makefile                    # init / dev / test·lint·format·check / deploy·down / ps
 ├── CONTEXT.md                  # 術語表（唯一定義處）
-├── .github/workflows/
-│   ├── ci-cd.yml               # merge→build :sha（部署由人在主機上執行）
-│   └── cleanup.yml             # 每週清理舊 image
+├── .github/
+│   ├── workflows/
+│   │   ├── ci-cd.yml           # merge→build :sha（部署由人在主機上執行）
+│   │   └── cleanup.yml         # 每週清理舊 image
+│   └── dependabot.yml          # 每週開 PR 更新相依（後端 uv、前端 npm、Actions）
 └── docs/                       # 詳細文檔（見上方 Docs）
 ```
