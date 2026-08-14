@@ -32,7 +32,7 @@
   憑證歸它管（對外真域名可自動申請 Let's Encrypt；內網用內部 CA / mkcert）——那是主機層的事，
   本 repo 不需要改動。
 - **可觀測性**：結構化 log、metrics、tracing。
-- **安全掃描**：映像漏洞掃描（Trivy）、Dependabot、SBOM、映像簽章（cosign）。
+- **安全掃描**：映像漏洞掃描（Trivy）、SBOM、映像簽章（cosign）。
 
 ## Adding a database
 
@@ -52,10 +52,9 @@
 
 ## Developer tooling
 
-後端已有 ruff（lint + format，select E/F/I/UP/N/B/PT）與跑在 dev stage 容器裡的 `make test`。以下刻意延後：
+後端已有 ruff（lint + format，select E/F/I/UP/N/B/PT）、跑在 dev stage 容器裡的 `make test`，
+與 Dependabot 週更相依（`.github/dependabot.yml`）。以下刻意延後：
 
-- **相依自動更新**：`.github/dependabot.yml` 自動更新相依與 Actions 版本（同見上方「安全掃描」）。
-  後端用 `==` 精確 pin，沒有自動更新機制就會慢慢腐化。
 - **前端品質把關**：`frontend/` **刻意**不設 lint / format / 測試——後端有 ruff（含 CI 的 `format --check`）
   與 pytest，前端 CI 只跑 `npm run build`。這個不對稱是有意識的取捨：前端目前只有一個展示用元件，
   等它長出真正的邏輯，再一次導入 eslint + vitest 比較划算（導入時記得同步 CI 與本機 `make` target）。
