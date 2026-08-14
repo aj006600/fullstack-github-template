@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from app.config import settings
 
-app = FastAPI(title="fullstack-docker-template-multienv backend", version="0.1.0")
+app = FastAPI(title="fullstack-github-template backend", version="0.1.0")
 
 
 @app.get("/health")
