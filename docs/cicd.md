@@ -1,4 +1,4 @@
-# CI/CD & Release
+# CI/CD
 
 [← README](../README.md) ｜ 觀念先修：[concepts.md](concepts.md) ｜ 詞彙：[CONTEXT.md](../CONTEXT.md)
 
@@ -13,7 +13,7 @@ gh pr create --fill
 gh pr merge --squash    # CI 綠燈後 merge（沒有任何機制擋你提早按，見 What nothing enforces）
 ```
 
-- PR 觸發測試；merge 到 main 才 build 出 `:sha`；打 `v*` tag 才把 `:sha` 加上版本標籤
+- PR 觸發測試；merge 到 main 才 build 出 `:sha`
 - **部署由人在目標主機上執行**，pipeline 不連線任何主機（理由見 [One-time GitHub setup](#one-time-github-setup)）
 - main 上**每個** commit 都會 build 出 `:sha`（含純文件 commit）——promote、rollback、`git bisect` 都依賴這個不變量。重複建置的成本由 build cache 吸收
 
@@ -37,13 +37,11 @@ gh pr merge --squash    # CI 綠燈後 merge（沒有任何機制擋你提早按
 **Build 一次 → 兩個 service 各打不可變的 git SHA tag → 同一組 image promote。** 各環境跑的都是**同一組 image**（用 SHA 指定），不重 build、不靠 `latest`。
 
 ```
-merge main ─▶ test ─▶ build(backend+frontend :sha) ─┐
-                                                    ├─▶ 人在目標主機上 make deploy
-git tag v* ─▶ test ─▶ release(:sha → :vX.Y.Z)      ─┘
+merge main ─▶ test ─▶ build(backend+frontend :sha) ─▶ 人在目標主機上 make deploy
 ```
 
-pipeline 的職責到「建置與標籤」為止。兩個 job 的 run summary 都會把該執行的 `make deploy` 指令
-連同 tag 一起印出來，直接複製到主機上跑。
+pipeline 的職責到「建置與標籤」為止。`build` job 的 run summary 會把該執行的 `make deploy` 指令
+連同 sha 一起印出來，直接複製到主機上跑。
 
 Image 位置（兩個）：
 
@@ -58,40 +56,31 @@ Deployment = 在**目標主機**上「拉 CI 測過的不可變 image + `up -d`�
 
 ```bash
 make deploy ENV=<dev|qas|prod> \
-    IMAGE=ghcr.io/<your-account>/<your-repo> TAG=<git-sha 或 vX.Y.Z>
+    IMAGE=ghcr.io/<your-account>/<your-repo> TAG=<git-sha>
 ```
 
 職責分工：
 
 ```
-CI（自動）       ＝ 建置與標籤：測試綠燈才 build、main 每個 commit 一顆 :sha、
-                   打 v* tag 才把該 :sha 標成 :vX.Y.Z
+CI（自動）       ＝ 建置與標籤：測試綠燈才 build、main 每個 commit 一顆 :sha
 make deploy      ＝ 執行原語：在目標主機上拉指定 TAG + up。由人執行，pipeline 只印指令
 ```
 
-## Release to prod (git tag)
+> `:sha` 存在本身就證明那個 commit 上過 main 且測試綠燈（`build` job 的前提就是這兩件事），
+> 所以部署一顆存在的映像，等於部署一個測過的 commit。
+
+## Release to prod
+
+發版沒有額外的儀式——prod 跟 dev/qas 部署**同一顆** `:sha`，promotion 就是在 prod 主機上
+帶 qas 驗過的那個 sha 跑一次：
 
 ```bash
-git checkout main && git pull          # 1. 要發的 commit 已在 main、dev/qas 驗過（:sha 已 build）
-git tag v1.2.0                         # 2. 打版本 tag
-git push origin v1.2.0                 # 3. 推 tag → 觸發 prod 發版
+make deploy ENV=prod IMAGE=ghcr.io/<your-account>/<your-repo> TAG=<在 qas 驗過的 git-sha>
 ```
 
-會把測試過的 `:sha` **加上版本 tag `:v1.2.0`（不重 build）**。接著在 prod 主機上部署那個 tag
-（`release` job 的 run summary 會把這行填好印出來）：
-
-```bash
-make deploy ENV=prod IMAGE=ghcr.io/<your-account>/<your-repo> TAG=v1.2.0
-```
-
-**tag 必須指向已經 build 完成的 commit。** `release` job 是把既有的 `:sha` 重新貼標籤，所以那顆映像要先存在。
-merge 之後**立刻**打 tag 有可能搶在 main 的 build 完成之前（tag 與 main 是不同的 ref，concurrency 不會讓它們排隊），
-此時 job 會以 `manifest unknown` 失敗。
-
-這個失敗是**安全**的——沒有任何東西被發布。等 main 的 build 跑完，在 Actions 頁面 re-run 該 job 即可，不必重打 tag。
-
-> 反過來說，`:sha` 存在本身就證明那個 commit 上過 main 且測試綠燈（`build` job 的前提就是這兩件事），
-> 所以指向未經 CI 的 commit 的 tag 也會在這一步失敗，不會漏出去。
+刻意沒有 `v*` tag 與 release job：`make deploy` 這個手動動作本身就是上 prod 的閘門，
+語意版本的 payoff（對外報版本號、release notes）目前用不到。哪天需要了再引入版本 tag，
+屆時同步給 cleanup 加回正式版的刪除豁免（見 [Image cleanup](#image-cleanup)）。
 
 ## Which version is running
 
@@ -101,7 +90,6 @@ Image 用 **git SHA** 當 tag，所以「哪個環境跑哪一版」= 「跑哪�
 git log --oneline -10                 # 看最近的 commit 與其 SHA
 git show <sha>                        # 看某個 SHA 改了什麼
 git checkout <sha>                    # 切過去看該版 code（看完 git switch - 回來）
-git checkout v1.0.0                   # 或用版本 tag 切到某次發版的 code
 
 docker ps --format '{{.Image}}'       # 看正在跑的 container 用哪顆 image
 ```
@@ -123,11 +111,13 @@ make deploy ENV=prod \
 
 ## Image cleanup
 
-`.github/workflows/cleanup.yml` 每週跑一次——兩個 service 的 `:sha` 建置各**只留最近 20 個**、**保護 `v*` 正式版**（永不刪除，rollback 才有得回）、刪 untagged。避免 image 無限累積。
+`.github/workflows/cleanup.yml` 每週跑一次——兩個 service 的 `:sha` 建置各**只留最近 20 個**、刪 untagged。避免 image 無限累積。
 
-> 這個數字就是 dev/qas 的 rollback 視窗有多深（main 每個 commit 建一顆），也是 Packages 儲存
-> 額度的主要旋鈕（見下方 [Billing](#billing)）。package 名由 `GITHUB_REPOSITORY` 推導，
-> fork 或改名都不必改那個檔案。
+> 這個數字就是**所有環境（含 prod）**的 rollback 視窗有多深（main 每個 commit 建一顆）：
+> prod 停在某顆 sha 期間 main 前進超過 20 個 commit，那顆 sha 會被清——正在跑的 container
+> 不受影響，但該版本從此無法再從 registry 部署。這是刻意接受的取捨（不為 prod 引入版本 tag），
+> 不夠用時調大 `keep-n-tagged`。它也是 Packages 儲存額度的主要旋鈕（見下方 [Billing](#billing)）。
+> package 名由 `GITHUB_REPOSITORY` 推導，fork 或改名都不必改那個檔案。
 
 ## One-time GitHub setup
 
@@ -141,10 +131,10 @@ Free 方案的私有 repo **不支援 Environments**（[官方文件](https://do
 
 一個既連不上主機、又拿不到核准閘門的 deploy job，留著只是每次 merge 白付一分鐘
 （Actions 以 **job** 為單位無條件進位計費），所以這個 pipeline 直接沒有 deploy job——
-部署指令由 `build` / `release` 的 run summary 提供，人複製到主機上跑。
+部署指令由 `build` job 的 run summary 提供，人複製到主機上跑。
 
-閘門其實還在，只是不在 GitHub 上：打 `v*` tag 是人主動做的，`make deploy` 也是人在主機上跑的。
-上 prod 本來就要經過兩個獨立的人為動作。
+閘門其實還在，只是不在 GitHub 上：`make deploy` 是人在目標主機上主動跑的，
+上 prod 一定經過這個人為動作。
 
 ### Billing
 

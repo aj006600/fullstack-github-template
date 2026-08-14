@@ -90,7 +90,7 @@ frontend 綁到主機的 `HTTP_PORT`（各 environment 不同埠，可同機並�
 ├── Makefile                    # init / dev / test·lint·format·check / deploy·down / ps
 ├── CONTEXT.md                  # 術語表（唯一定義處）
 ├── .github/workflows/
-│   ├── ci-cd.yml               # merge→build :sha；打 v* tag→加版本標籤（部署由人在主機上執行）
+│   ├── ci-cd.yml               # merge→build :sha（部署由人在主機上執行）
 │   └── cleanup.yml             # 每週清理舊 image
 └── docs/                       # 詳細文檔（見上方 Docs）
 ```
