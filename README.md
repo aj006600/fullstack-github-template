@@ -1,4 +1,4 @@
-# fullstack-docker-template-multienv
+# fullstack-github-template
 
 前後端分離 + 多環境（dev / qas / prod）的容器範本：React(Vite) 前端 + FastAPI 後端，
 用 docker compose 兜起來，CI/CD 遵循「build 一次、依序 promote」的業界最佳實踐。

@@ -1,4 +1,4 @@
-# fullstack-docker-template-multienv
+# fullstack-github-template
 
 多環境容器範本的共用詞彙。這個 repo 有幾個詞天生一詞多義（尤其 `dev`），這份表是唯一定義處——
 其他文檔只連過來，不重述定義。
