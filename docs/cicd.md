@@ -57,7 +57,7 @@ ghcr.io/<your-account>/<your-repo>-frontend:<git-sha>
 Deployment = 在**目標主機**上「拉 CI 測過的不可變 image + `up -d`」，**不在主機重 build**（在主機重 build 會破壞 build-once 的保證）：
 
 ```bash
-make deploy EXPOSE=<ports|proxy> ENV=<dev|qas|prod> \
+make deploy ENV=<dev|qas|prod> \
     IMAGE=ghcr.io/<your-account>/<your-repo> TAG=<git-sha 或 vX.Y.Z>
 ```
 
@@ -81,7 +81,7 @@ git push origin v1.2.0                 # 3. 推 tag → 觸發 prod 發版
 （`release` job 的 run summary 會把這行填好印出來）：
 
 ```bash
-make deploy EXPOSE=<ports|proxy> ENV=prod IMAGE=ghcr.io/<your-account>/<your-repo> TAG=v1.2.0
+make deploy ENV=prod IMAGE=ghcr.io/<your-account>/<your-repo> TAG=v1.2.0
 ```
 
 **tag 必須指向已經 build 完成的 commit。** `release` job 是把既有的 `:sha` 重新貼標籤，所以那顆映像要先存在。
@@ -117,7 +117,7 @@ Image 不可變且都留在 registry，所以 **rollback = 重新部署上一組
 git log --oneline                     # 1. 找出要回到的舊 SHA
 
 # 2. 在目標主機上把該環境部署回舊 SHA（一行）
-make deploy EXPOSE=<ports|proxy> ENV=prod \
+make deploy ENV=prod \
     IMAGE=ghcr.io/<your-account>/<your-repo> TAG=<old-sha>
 ```
 

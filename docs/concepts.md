@@ -34,7 +34,7 @@ make deploy ENV=qas IMAGE=… TAG=…
 | 環境數 | 只有 **dev 一個** | dev / qas / prod（可同機並存） |
 | Image | 本機現場 build，掛載 source code + hot reload | registry 的 `:sha` 或 `:vX.Y.Z`，`--no-build` |
 | 執行方式 | 前景（`Ctrl+C` 停、`make dev-down` 清） | 背景 `-d`（`make down` 才會停） |
-| 怎麼連 | `localhost:3000` / `:8000` | 依 `EXPOSE`（`IP:port` 或 domain） |
+| 怎麼連 | `localhost:3000` / `:8000` | `http://<host>:<HTTP_PORT>` |
 
 **刻意沒有第三個「在本機 build 然後部署」的指令。** 在目標主機上重 build 會拉到不同的 base layer 或相依，
 「dev 測過的就是上 prod 的那顆」這個保證就沒了。

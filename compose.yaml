@@ -1,4 +1,4 @@
-# Base：只定義服務與內部接線；對外曝露由 override 決定（compose.dev.yaml / deploy/compose.*.yaml）。
+# Base：只定義服務與內部接線；對外曝露由 override 決定（compose.dev.yaml / compose.deploy.yaml）。
 services:
   backend:
     build: ./backend
@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     # 兩層：進版控的非機密設定，加上一層同名 .local 的機密疊加（不進版控，每台主機自己建）。
     # required: false 讓沒有 .local 的機器照常啟動；後載入的覆蓋同名變數。
-    # 只影響 container 內的環境變數——compose 檔自身的插值（HTTP_PORT、DOMAIN）走 Makefile 的
+    # 只影響 container 內的環境變數——compose 檔自身的插值（HTTP_PORT）走 Makefile 的
     # --env-file，讀不到 .local。詳見 docs/deployment.md。
     env_file:
       - env/.env.${APP_ENV:-dev}
