@@ -20,12 +20,13 @@ jobs:
       - uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           packages: ${{ env.REPO }}-backend,${{ env.REPO }}-frontend
-          # 只算 :sha 建置（v* 在 exclude-tags 保護，不佔額度）。main 每個 commit 建一顆，
-          # 所以這個數字就是 dev/qas 的 rollback 視窗有多深。
+          # main 每個 commit 建一顆 :sha，所以這個數字就是**所有環境**（含 prod）的
+          # rollback 視窗有多深：prod 停在某顆 sha 期間 main 前進超過這個數，那顆 sha
+          # 會被清——正在跑的 container 不受影響，但該版本從此無法再從 registry 部署。
+          # 這是刻意接受的取捨（不為 prod 引入版本 tag）；不夠用時調大這個數字。
           # private repo 的 Packages 儲存計入方案額度（Free 含 500MB），所以這個數字有成本。
           # 真正吃額度的不是 :sha 的數量——各 :sha 之間多半只差 COPY app 那層（base 與 uv sync
           # 共用 blob）——而是每次 pyproject.toml / package-lock.json 變動生出的那份新 base blob。
           keep-n-tagged: 20
-          exclude-tags: v*           # 正式版永不刪除——rollback 才有得回
           delete-untagged: true
           dry-run: false

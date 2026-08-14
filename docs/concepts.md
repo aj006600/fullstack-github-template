@@ -32,7 +32,7 @@ make deploy ENV=qas IMAGE=… TAG=…
 | 在哪執行 | **你的開發機** | **目標主機** |
 | 目的 | 寫 code | 部署某個 environment |
 | 環境數 | 只有 **dev 一個** | dev / qas / prod（可同機並存） |
-| Image | 本機現場 build，掛載 source code + hot reload | registry 的 `:sha` 或 `:vX.Y.Z`，`--no-build` |
+| Image | 本機現場 build，掛載 source code + hot reload | registry 的 `:sha`，`--no-build` |
 | 執行方式 | 前景（`Ctrl+C` 停、`make dev-down` 清） | 背景 `-d`（`make down` 才會停） |
 | 怎麼連 | `localhost:3000` / `:8000` | `http://<host>:<HTTP_PORT>` |
 
@@ -40,7 +40,7 @@ make deploy ENV=qas IMAGE=… TAG=…
 「dev 測過的就是上 prod 的那顆」這個保證就沒了。
 
 > 版本永遠是**傳入的**——environment 不「知道」自己該跑哪顆 image。`TAG` 填什麼由 promotion 流程決定
-> （merge 產出該 commit 的 `:sha` 給 dev/qas；打 `v*` tag 產出 `:vX.Y.Z` 給 prod），rollback 就填舊的。
+> （merge 產出該 commit 的 `:sha`，三個 environment 都部署它），rollback 就填舊的。
 > 見 [cicd.md](cicd.md)。
 
 > **「哪個環境跑哪顆」只能靠主機上 `docker ps` 的 image tag。** pipeline 不部署，所以 GitHub
@@ -57,14 +57,12 @@ make deploy ENV=qas IMAGE=… TAG=…
 
 ```bash
 gh pr merge --squash                        # build 出該 commit 的 :sha
-git tag v1.2.0 && git push origin v1.2.0    # 把該 :sha 加標成 :v1.2.0
 ```
 
 | 指令 | 動到哪裡 | 效果 |
 |------|---------|------|
 | `make dev`（重跑） | 你**本機** | 只有 dev，立即生效 |
 | `gh pr merge`（merge main） | **registry** | 產出 `:sha`，沒有任何環境變動 |
-| `git tag v* && git push` | **registry** | 產出 `:vX.Y.Z`，沒有任何環境變動 |
 | `make deploy`（在主機上） | **那台主機** | 唯一會改變執行中環境的動作 |
 
 > 推到 GitHub 不會改變任何正在跑的環境——pipeline 的職責到「建置與標籤」為止。要讓某個

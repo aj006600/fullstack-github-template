@@ -33,7 +33,8 @@ _Avoid_: preview、部署到本機（`make dev` 是開發，不是 deployment）
 
 **Promotion**:
 把**同一顆**已測過的 image 往下一個 environment 送，不重新 build。
-本 repo 用 tag 層級的 promotion：`:sha` 給 dev/qas，發版時重新標籤成 `:vX.Y.Z` 給 prod。
+本 repo 的 promotion 就是帶同一個 `:sha` 對下一個 environment 跑 `make deploy`，
+沒有 per-environment 的重新標籤。
 _Avoid_: 重新部署、rebuild
 
 **Rollback**:
@@ -49,7 +50,7 @@ _Avoid_: 復原、還原（那些是資料層的事；rollback 只講 image 版�
 promotion、rollback、稽核都靠它。慣例上不可變。
 
 **latest**:
-本 repo 的 registry 上**不存在** `latest`。CI 只推 `:sha` 與 `:vX.Y.Z`。
+本 repo 的 registry 上**不存在** `latest`。CI 只推 `:sha`。
 `compose.yaml` 的 `${TAG:-latest}` 是 Docker 對本機 build 的預設標籤，與 registry 無關。
 
 **IMAGE / TAG**:

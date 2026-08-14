@@ -15,7 +15,7 @@ make deploy ENV=<dev|qas|prod> IMAGE=… TAG=…   # 拉指定版本並啟動
 make down   ENV=<dev|qas|prod>                 # 停止
 ```
 
-`TAG` 是 `:sha`（dev/qas）或 `vX.Y.Z`（prod）；rollback 就換回舊的 sha——無狀態時才這麼單純：
+`TAG` 是該 commit 的 git SHA；rollback 就換回舊的 sha——無狀態時才這麼單純：
 一旦有了資料庫 schema，程式碼回得去，migration 過的資料回不去。
 
 > **主機必須是 amd64 Linux。** CI 只建 amd64——在 Apple Silicon 的開發機上 `make deploy` 會失敗
@@ -85,7 +85,7 @@ frontend 綁到主機的 `HTTP_PORT`。三個 environment 同機並存時各用�
 ```bash
 make deploy ENV=dev  IMAGE=ghcr.io/<your-account>/<your-repo> TAG=<git-sha>
 make deploy ENV=qas  IMAGE=… TAG=…
-make deploy ENV=prod IMAGE=… TAG=vX.Y.Z
+make deploy ENV=prod IMAGE=… TAG=<在 qas 驗過的 git-sha>
 make ps              # 看狀態
 ```
 
