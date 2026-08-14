@@ -11,10 +11,10 @@
 |----------|--------|
 | **搞懂核心觀念**（一顆 image 多環境、build vs registry、本機 vs CI/CD） | [docs/concepts.md](docs/concepts.md) |
 | **本機開發**（quickstart、hot reload、docker exec、查看跑了什麼） | [docs/development.md](docs/development.md) |
-| **部署**（`ports` 與 `proxy`、怎麼連上、troubleshooting） | [docs/deployment.md](docs/deployment.md) |
+| **部署**（多環境同機並存、怎麼連上、troubleshooting） | [docs/deployment.md](docs/deployment.md) |
 | **CI/CD 與發版**（promotion、rollback、GitHub 設定、image 清理） | [docs/cicd.md](docs/cicd.md) |
 | **上 production 前還要加什麼**（Secrets/TLS/DB/健康檢查…） | [docs/roadmap.md](docs/roadmap.md) |
-| **術語**（`dev` 的三個意思、`EXPOSE` 的兩個意思、up vs deploy…） | [CONTEXT.md](CONTEXT.md) |
+| **術語**（`dev` 的三個意思、up vs deploy…） | [CONTEXT.md](CONTEXT.md) |
 
 ## Make it yours
 
@@ -24,8 +24,8 @@
 make init APP_NAME=my-app
 ```
 
-它會把 template 的名字換成 `my-app`——container 與 network 名、本機 build 的 image 名、
-reverse proxy 的 router 名、`DOMAIN`，以及 README 標題、頁面 title 這些沒有插值能力的地方。
+它會把 template 的名字換成 `my-app`——container 與 network 名、本機 build 的 image 名，
+以及 README 標題、頁面 title 這些沒有插值能力的地方。
 同時移除 `make init` 自己，以及只服務於「蓋這個 template」的東西——`CLAUDE.md`、`docs/agents/`、
 `CONTEXT.md`、`docs/{concepts,cicd,roadmap}.md`、`docs/adr/`，並把這份 README 換成指向 `docs/` 的骨架
 （`docs/development.md` 與 `docs/deployment.md` 留著）。
@@ -62,21 +62,15 @@ make help      # 所有指令與參數
 部署在**目標主機**（amd64 Linux）上執行，拉 CI 測過的不可變映像，不重 build：
 
 ```bash
-make deploy EXPOSE=<ports|proxy> ENV=<dev|qas|prod> IMAGE=… TAG=…   # 拉指定版本並啟動
-make down   EXPOSE=<ports|proxy> ENV=<dev|qas|prod>                 # 停止
+make deploy ENV=<dev|qas|prod> IMAGE=… TAG=…   # 拉指定版本並啟動
+make down   ENV=<dev|qas|prod>                 # 停止
 ```
 
 > 刻意只有這一條部署路徑：在主機上從原始碼 build 會破壞「dev 測過的就是上 prod 的那顆」。
 > 開發機請用 `make dev`。
 
-`EXPOSE` 決定怎麼對外曝露。兩種：
-
-| `EXPOSE` | 做什麼 | 何時選 | 網址長相 |
-|----------|--------|--------|---------|
-| **`ports`** | frontend 綁到主機的 `HTTP_PORT` | 預設。不需要 domain | `http://<host>:<port>` |
-| **`proxy`** | 接上整台機器共用的 reverse proxy，依 `DOMAIN` 導流 | 要 domain、團隊存取、日後要 TLS | `http://<domain>` |
-
-怎麼選、怎麼連上、troubleshooting 見 [docs/deployment.md](docs/deployment.md)。
+frontend 綁到主機的 `HTTP_PORT`（各 environment 不同埠，可同機並存）。
+怎麼連上、troubleshooting 見 [docs/deployment.md](docs/deployment.md)。
 
 ## Structure
 
@@ -91,9 +85,7 @@ make down   EXPOSE=<ports|proxy> ENV=<dev|qas|prod>                 # 停止
 │   ├── package.json · package-lock.json  ·  Dockerfile
 ├── compose.yaml                # base：只定義服務與內部接線（不決定對外曝露）
 ├── compose.dev.yaml            # 本機開發覆寫：開 localhost 埠 + 後端 hot reload
-├── deploy/                     # EXPOSE 的兩個值（同一個 app、只差怎麼曝露）
-│   ├── compose.ports.yaml      # 綁主機埠
-│   └── compose.proxy.yaml      # 掛共用 reverse proxy
+├── compose.deploy.yaml         # 部署覆寫：frontend 綁主機的 HTTP_PORT
 ├── env/{.env.dev,.env.qas,.env.prod}   # 各環境的非機密設定（機密走同名 .local，不進版控）
 ├── Makefile                    # init / dev / test·lint·format·check / deploy·down / ps
 ├── CONTEXT.md                  # 術語表（唯一定義處）
@@ -102,6 +94,3 @@ make down   EXPOSE=<ports|proxy> ENV=<dev|qas|prod>                 # 停止
 │   └── cleanup.yml             # 每週清理舊 image
 └── docs/                       # 詳細文檔（見上方 Docs）
 ```
-
-> `EXPOSE=proxy` 需要一份整台機器共用的 reverse proxy。它**不在本 repo**（一台機器一份，
-> 而 app 是一台機器多個）。本 repo 依賴的契約與我用的實作見 [docs/deployment.md](docs/deployment.md)。

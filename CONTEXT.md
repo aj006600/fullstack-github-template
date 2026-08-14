@@ -31,21 +31,6 @@ runtime stage 出貨、非 root；dev stage 含 pytest 與 ruff，只給本機�
 在主機上從原始碼 build **不算** deployment，也刻意沒有對應的指令。
 _Avoid_: preview、部署到本機（`make dev` 是開發，不是 deployment）
 
-**EXPOSE**:
-`make deploy` / `make down` 的參數，決定這個 environment 怎麼對外曝露。二選一：
-`ports`（container 綁到主機的某個埠）、`proxy`（不綁埠，接上整台機器共用的 reverse proxy，
-由它依 domain 導流）。對應 `deploy/compose.<值>.yaml`。
-
-**與 Dockerfile 的 `EXPOSE` 無關**——那個是宣告 container 監聽哪個埠。同名不同義，
-需要區分時說「`make` 的 `EXPOSE`」，或直接說值（`ports` / `proxy`）。
-
-「某個 environment 獨佔一台主機」**不是第三個值**，是 `ports` 把該主機的 `HTTP_PORT` 設成 80。
-
-`EXPOSE` 與 environment 是兩個維度，但**設定上不正交**：曝露用的參數（`ports` 用的 `HTTP_PORT`、
-`proxy` 用的 `DOMAIN`）住在 environment 的 env 檔裡。這是刻意的——把它們拆到第三個地方，
-只為了兩個變數多一層檔案。
-_Avoid_: topology（曾經的概念名，與 `EXPOSE` 重複而移除）、mode（舊參數名 `MODE`）、部署方式
-
 **Promotion**:
 把**同一顆**已測過的 image 往下一個 environment 送，不重新 build。
 本 repo 用 tag 層級的 promotion：`:sha` 給 dev/qas，發版時重新標籤成 `:vX.Y.Z` 給 prod。

@@ -28,9 +28,9 @@
 - **Secrets 送到主機的路徑**：機密本身已經有位置——`env/.env.<env>.local`，不進版控、每台主機自己建
   （見 [deployment.md](deployment.md#2-configure-each-environment)）。人工部署到此為止就夠了。
   等 CD 真的連上主機，才需要決定那個檔怎麼產生：GitHub Secrets 隨部署寫入、或改接 Vault / 雲端 secrets manager。
-- **TLS / HTTPS**：目前純 HTTP。走 `EXPOSE=proxy` 的話，憑證屬於那份共用 reverse proxy 的職責
-  （對外真域名可自動申請 Let's Encrypt；內網用內部 CA / mkcert），本 repo 不需要改動——
-  見 [deployment.md](deployment.md) 的契約說明。`ports` 則需要自己在前面加一層。
+- **TLS / HTTPS**：目前純 HTTP。要 TLS 就在前面加一層 reverse proxy（Traefik / Caddy / nginx），
+  憑證歸它管（對外真域名可自動申請 Let's Encrypt；內網用內部 CA / mkcert）——那是主機層的事，
+  本 repo 不需要改動。
 - **可觀測性**：結構化 log、metrics、tracing。
 - **安全掃描**：映像漏洞掃描（Trivy）、Dependabot、SBOM、映像簽章（cosign）。
 

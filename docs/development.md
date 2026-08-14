@@ -8,7 +8,7 @@
 
 ## Quickstart
 
-`make dev` 用於**本機開發**：起前後端、掛載後端 source code 並開啟 hot reload，直接連 `localhost`，不經任何 proxy。
+`make dev` 用於**本機開發**：起前後端、掛載後端 source code 並開啟 hot reload，直接連 `localhost`。
 
 ```bash
 make dev          # APP_ENV=dev：前後端起來、後端 hot reload（前景執行，佔住終端機）
@@ -51,7 +51,7 @@ make check     # 驗證部署設定（不啟動容器）
 
 前三者跑在 Dockerfile 的 **dev stage** 容器裡（含 pytest / ruff）；`--build` 已內建，改了 `pyproject.toml` / `uv.lock` 會自動生效。CI 以同樣的檢查把關，本機先跑省一輪紅燈。
 
-`make check` 是另一回事——它不碰程式碼，只驗那些**錯了不會當場報錯**的部署設定。改了 `compose*.yaml`、`deploy/`、`env/` 或 `Makefile` 之後跑一次；驗什麼、為什麼要驗，見 Makefile 的 `check` target 註釋。
+`make check` 是另一回事——它不碰程式碼，只驗那些**錯了不會當場報錯**的部署設定。改了 `compose*.yaml`、`env/` 或 `Makefile` 之後跑一次；驗什麼、為什麼要驗，見 Makefile 的 `check` target 註釋。
 
 ## Entering containers (docker exec)
 
@@ -101,7 +101,7 @@ docker ps                # 同上，未美化
 ```bash
 docker ps -a             # 連「停掉但殘留」的 container 也列（exited 狀態）
 docker compose ls -a     # 連停掉的 compose project 也列
-docker network ls        # 有哪些 network（proxy、各 project network）
+docker network ls        # 有哪些 network（各 project 一個）
 ```
 
 > `docker compose ls` 列出的 project 名就是「哪個 environment 正開著」——`make deploy` 用 `fullstack-<env>`，`make dev` 用資料夾名，兩者互不干擾。

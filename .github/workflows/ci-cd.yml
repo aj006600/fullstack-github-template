@@ -52,7 +52,7 @@ jobs:
 
   # ---------- CI：部署設定驗證 ----------
   # 呼叫 make check，跟本機同一個 target——定義只有一份，不會漂移。
-  # 不啟動容器，只讓 compose 把每種 EXPOSE × ENV 組合渲染出來。
+  # 不啟動容器，只讓 compose 把每個 ENV 渲染出來。
   check-compose:
     runs-on: ubuntu-latest
     steps:
@@ -96,9 +96,9 @@ jobs:
         run: |
           {
             echo "### 部署這個 commit"
-            echo "在目標主機上執行（\`EXPOSE\` 依該主機的曝露方式擇一）："
+            echo "在目標主機上執行："
             echo '```bash'
-            echo "make deploy EXPOSE=<ports|proxy> ENV=<dev|qas> IMAGE=${{ env.IMAGE }} TAG=${{ github.sha }}"
+            echo "make deploy ENV=<dev|qas> IMAGE=${{ env.IMAGE }} TAG=${{ github.sha }}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -132,6 +132,6 @@ jobs:
             echo "### 發版到 prod"
             echo "在 prod 主機上執行："
             echo '```bash'
-            echo "make deploy EXPOSE=<ports|proxy> ENV=prod IMAGE=${{ env.IMAGE }} TAG=${{ github.ref_name }}"
+            echo "make deploy ENV=prod IMAGE=${{ env.IMAGE }} TAG=${{ github.ref_name }}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

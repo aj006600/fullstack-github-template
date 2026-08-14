@@ -1,4 +1,4 @@
-# EXPOSE=ports：直接把 frontend 綁到主機的某個埠。
+# 部署 override：frontend 綁到主機的某個埠。
 # 多個 environment 同機並存時各用不同 HTTP_PORT；某個 environment 獨佔一台主機時，
 # 把該主機上那份 env 檔的 HTTP_PORT 設成 80，網址就不必帶埠（見 docs/deployment.md）。
 # 刻意不給預設值：漏填時若退回 80，compose 不吭聲、make check 看到的是一份正常輸出，
