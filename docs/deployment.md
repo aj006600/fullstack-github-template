@@ -124,6 +124,7 @@ make ps              # 看狀態
 ```bash
 make logs ENV=<dev|qas|prod>                    # tail 該 environment 的 backend + frontend
 make logs ENV=<dev|qas|prod> SERVICE=backend    # 只看單一服務（backend | frontend）
+make logs ENV=<dev|qas|prod> TAIL=all           # 從頭回看（預設只回看最後 100 行再 follow）
 ```
 
 它帶上 project 名與 env 檔，等同 `docker compose -p fullstack-<env> -f compose.yaml -f compose.deploy.yaml --env-file env/.env.<env> logs -f --tail=100`——
@@ -141,7 +142,14 @@ backend 的每一行 log 都是一筆 JSON（`LOG_FORMAT` 預設 `json`，見上
 make logs ENV=prod SERVICE=backend 2>&1 | grep -o '{.*}' | jq -c 'select(.level != "info")'
 ```
 
-frontend（nginx）維持 nginx 原生的文字格式 access log。
+frontend（nginx）維持 nginx 原生的文字格式 access log，只在**行尾多一欄 Request ID**：
+
+```
+172.18.0.1 - - [31/Aug/2026:11:41:09 +0000] "GET /api/message HTTP/1.1" 200 48 "-" "Mozilla/5.0 ..." "-" 5e42513496b80c57139a820ce1fe16ef
+```
+
+同一個 id 也在 backend 該次請求每一行 log 的 `request_id` 欄位，以及回給瀏覽器的 `X-Request-ID` header——
+用法見下方 [Troubleshooting](#a-user-reports-that-something-failed)，詞條定義見 [CONTEXT.md](../CONTEXT.md#observability)。
 
 **輪替**：部署的兩個 container 都用 `json-file` driver、單檔 10 MB、最多 3 檔（`compose.deploy.yaml`），
 每個 container 的 log 上限 **30 MB**，超過就丟最舊的——長期運行不會填滿磁碟。需要更長的保存期，
@@ -159,3 +167,23 @@ docker ps --filter publish=<port>        # 或看是哪個 container
 ```
 
 解法：停掉占用者，或改 `env/.env.<env>` 的 `HTTP_PORT` 再重跑。
+
+### A user reports that something failed
+
+請使用者開 devtools → Network → 點那個失敗的 `/api/*` 請求 → Response Headers，抄下 `X-Request-ID`。
+每個 `/api/*` 請求都有：它由 nginx 在第一跳產生，連 backend 沒回應時 nginx 自己回的 502 也帶。
+拿到 id 後在主機上：
+
+```bash
+make logs ENV=<env> TAIL=all 2>&1 | grep <id>     # 該次請求在兩個 container 的所有 log；Ctrl+C 結束
+```
+
+同一個 id 出現在兩層，**哪一層有它**就說明錯在哪：
+
+| 使用者看到 | frontend access log | backend log | 意思 |
+|-----------|--------------------|-------------|------|
+| **502** | 有（status 502） | **通常沒有** | 請求沒到 backend——nginx 連不上它：container 掛了、還在啟動、或剛重建。看 `make ps` 的狀態與 `make logs ENV=<env> SERVICE=backend` 最後幾行（啟動失敗的 traceback 在那裡） |
+| **500** | 有（status 500） | 有 | backend 收到了但炸了——同一 id 的那幾行裡有 `request.completed`（`status_code=500`）與 traceback |
+| 其他 4xx/5xx | 有 | 有 | backend 自己回的錯誤；看該 id 的 `request.completed` 與其前後的 app log |
+
+> 使用者若沒抄 id，退而求其次用時間：access log 的 `[時間]` 與 backend log 的 `timestamp` 都是 UTC。

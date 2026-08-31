@@ -31,7 +31,13 @@
 - **TLS / HTTPS**：目前純 HTTP。要 TLS 就在前面加一層 reverse proxy（Traefik / Caddy / nginx），
   憑證歸它管（對外真域名可自動申請 Let's Encrypt；內網用內部 CA / mkcert）——那是主機層的事，
   本 repo 不需要改動。
-- **可觀測性**：結構化 log、metrics、tracing。
+- **可觀測性**：**已內建**結構化 log（backend 一行一筆 JSON 到 stdout）、Request ID（定義見
+  [CONTEXT.md](../CONTEXT.md#observability)）、log 輪替——用法見 [deployment.md](deployment.md#reading-logs)。**待加**：
+  - **Metrics**：backend 曝露 Prometheus endpoint（請求數 / 延遲 / 錯誤率），主機層由 cAdvisor 或 node exporter 補。
+  - **Tracing（OpenTelemetry）**：跨服務追蹤。加上之後 `request_id` 可對應 trace_id——log 與 trace 用同一把鍵互查，
+    Request ID 的用法不變。
+  - **集中式 log 平台**（Loki / hosted 服務）：兩個 container 都已把 log 寫到 stdout，接法是 docker log driver
+    或主機上的 agent 收走，**app code 不用改**；保存期在那邊設，不是調大本機輪替上限。
 - **安全掃描**：映像漏洞掃描（Trivy）、SBOM、映像簽章（cosign）。
 
 ## Adding a database

@@ -68,7 +68,9 @@ backend 的每一行 log——app 自己的、uvicorn 的啟動訊息、未捕�
 （預設值，見 [deployment.md](deployment.md#2-configure-each-environment)）。
 
 - **Request log**：每個 request 結束時一行 `request.completed`，帶 `method`、`path`、`status_code`、`duration_ms`——看哪個 endpoint 慢或錯就看這行。uvicorn 內建的 access log 已停用，`/health`（healthcheck 每 3 秒一次）不產生 request log。詞條定義見 [CONTEXT.md](../CONTEXT.md#observability)。
-- **Request ID**：request 期間 backend 的每一行 log 都帶 `request_id`，且以 `X-Request-ID` 回在 response header。瀏覽器裡某個操作失敗時，開 devtools → Network → 點那個 `/api/*` 請求 → Response Headers 抄下 `X-Request-ID`，到 `make dev` 的終端機搜這個值，就是那次請求的全部 log。請求自帶 `X-Request-ID`（1–64 字元）時 backend 沿用，否則自產。
+- **Request ID**：request 期間 backend 的每一行 log 都帶 `request_id`，且以 `X-Request-ID` 回在 response header。瀏覽器裡某個操作失敗時，開 devtools → Network → 點那個 `/api/*` 請求 → Response Headers 抄下 `X-Request-ID`，到 `make dev` 的終端機搜這個值，就是那次請求的全部 log。詞條定義見 [CONTEXT.md](../CONTEXT.md#observability)。
+  - 經 `:3000`：id 由 nginx 產生，nginx access log 行尾也有同一個 id。
+  - 直接打 `:8000`、或 `npm run dev` 的 Vite 代理：不經 nginx，backend 沿用請求自帶的 `X-Request-ID`（1–64 字元），沒有就自產。
 - **自己寫 log**：照 `app/main.py` 的 `message.served`——`structlog.get_logger()` 取 logger、事件名用 `名詞.動詞`、欄位用 kwargs 而不是塞進字串；`request_id` 會自動帶上，不用自己傳。
 - **等級**由 `env/.env.dev` 的 `LOG_LEVEL` 決定（`debug` ｜ `info` ｜ `warning` ｜ `error`），對 app 與 uvicorn 都生效；打錯字時服務啟動就失敗。
 - `uvicorn --reload` 的 **reloader 行**例外（`Will watch for changes` / `Uvicorn running on` / `Started reloader process` / `WatchFiles detected changes`）：它們來自不載入 app 的監看 process，仍是 uvicorn 原生的 `INFO:` 格式。

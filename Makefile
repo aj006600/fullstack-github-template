@@ -40,7 +40,7 @@ help:
 	@echo ""
 	@echo "Inspection"
 	@echo "  make ps                           正在跑的 container（名稱 / 狀態 / 埠）"
-	@echo "  make logs    ENV=… [SERVICE=…]    tail 該環境的 log（SERVICE = backend | frontend，預設兩者）"
+	@echo "  make logs    ENV=… [SERVICE=…]    tail 該環境的 log（SERVICE = backend | frontend，預設兩者；TAIL=all 回看全部）"
 
 # >>> init（make init 會刪掉這整段，不要移除這兩行標記）
 # ── Project init（一次性）──
@@ -140,6 +140,8 @@ ps:
 
 # 帶 project 名與 env 檔：手打會漏掉 -p 而看到別的環境（或什麼都看不到）。
 # SERVICE 留空時 compose 顯示 stack 內全部服務。
+# TAIL=all 給「拿 Request ID 撈某次請求」用：預設只回看 100 行，較早的請求會安靜地撈不到。
+TAIL ?= 100
 logs:
 	$(guard)
-	$(PROJECT) docker compose $(STACK) logs -f --tail=100 $(SERVICE)
+	$(PROJECT) docker compose $(STACK) logs -f --tail=$(TAIL) $(SERVICE)
