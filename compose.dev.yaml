@@ -14,7 +14,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - LOG_FORMAT=console   # 部署一律 json（設定的預設值）；只有本機前景需要人看得懂的格式
+      - LOG_FORMAT=console   # 預設 json；只有本機前景需要人看得懂的格式
 
   frontend:
     ports:

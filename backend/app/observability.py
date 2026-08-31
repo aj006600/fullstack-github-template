@@ -25,18 +25,18 @@ def configure_logging(settings: Settings) -> None:
     ]
     if settings.log_format == "json":
         # JSONRenderer 不會處理 exc_info tuple，得先轉成字串；ConsoleRenderer 自己會印
-        render: list[structlog.typing.Processor] = [
+        renderers: list[structlog.typing.Processor] = [
             structlog.processors.format_exc_info,
             structlog.processors.JSONRenderer(),
         ]
     else:
-        render = [structlog.dev.ConsoleRenderer()]
+        renderers = [structlog.dev.ConsoleRenderer()]
 
     formatter = structlog.stdlib.ProcessorFormatter(
         foreign_pre_chain=shared_processors,
         processors=[
             structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-            *render,
+            *renderers,
         ],
     )
     # sys.__stdout__ 而非 sys.stdout：pytest 在收集階段就把 sys.stdout 換成自己的物件，

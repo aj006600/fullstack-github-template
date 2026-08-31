@@ -40,10 +40,10 @@ GitHub 上按「Use this template」（或 clone 本 repo），改成你的 app�
 
 | 變數 | 值 | 說明 |
 |------|----|------|
-| `LOG_LEVEL` | `debug` ｜ `info` ｜ `warning` ｜ `error` | 對 app 與 uvicorn 都生效；打錯字時 container 啟動就失敗，不會靜默退回預設值 |
+| `LOG_LEVEL` | `debug` ｜ `info` ｜ `warning` ｜ `error`（小寫） | 對 app 與 uvicorn 都生效；打錯字或大寫時 container 啟動就失敗，不會靜默退回預設值 |
 | `LOG_FORMAT` | 預設 `json`，**env 檔不寫** | 部署一律一行一筆 JSON 到 stdout；`console` 只給 `make dev`，由 `compose.dev.yaml` 覆寫 |
 
-三個 environment 之間只差 `LOG_LEVEL`，格式一致。
+三個 environment 的 log 設定只差 `LOG_LEVEL`，格式一致。
 
 ```bash
 # 在目標主機上，例如 prod
