@@ -86,9 +86,9 @@ frontend 綁到主機的 `HTTP_PORT`（各 environment 不同埠，可同機並�
 │   ├── package.json · package-lock.json  ·  Dockerfile
 ├── compose.yaml                # base：只定義服務與內部接線（不決定對外曝露）
 ├── compose.dev.yaml            # 本機開發覆寫：開 localhost 埠 + 後端 hot reload + console log（唯一可偏離部署行為的檔案）
-├── compose.deploy.yaml         # 部署覆寫：frontend 綁主機的 HTTP_PORT
+├── compose.deploy.yaml         # 部署覆寫：frontend 綁主機的 HTTP_PORT + log 輪替（10m × 3）
 ├── env/{.env.dev,.env.qas,.env.prod}   # 各環境的非機密設定（機密走同名 .local，不進版控）
-├── Makefile                    # init / dev / test·lint·format·check / deploy·down / ps
+├── Makefile                    # init / dev / test·lint·format·check / deploy·down / ps·logs
 ├── CONTEXT.md                  # 術語表（唯一定義處）
 ├── .github/
 │   ├── workflows/

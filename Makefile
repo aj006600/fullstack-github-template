@@ -20,7 +20,7 @@ ENVS_TXT := $(shell echo "$(ENVS)" | sed 's/ / | /g')
 # 比對推導出的清單而非 test -f：否則 ENV=dev.local 這種 check 從不驗證的組合會過關。
 guard = @test -n "$(filter $(ENV),$(ENVS))" || { echo "ENV=$(ENV) 無效。可用：$(ENVS_TXT)"; exit 1; }
 
-.PHONY: help init dev dev-down test lint format check down deploy ps
+.PHONY: help init dev dev-down test lint format check down deploy ps logs
 
 help:
 	@echo "Setup（從 template 開新專案時做一次）"
@@ -40,6 +40,7 @@ help:
 	@echo ""
 	@echo "Inspection"
 	@echo "  make ps                           正在跑的 container（名稱 / 狀態 / 埠）"
+	@echo "  make logs    ENV=… [SERVICE=…]    tail 該環境的 log（SERVICE = backend | frontend，預設兩者）"
 
 # >>> init（make init 會刪掉這整段，不要移除這兩行標記）
 # ── Project init（一次性）──
@@ -136,3 +137,9 @@ down:
 
 ps:
 	docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+
+# 帶 project 名與 env 檔：手打會漏掉 -p 而看到別的環境（或什麼都看不到）。
+# SERVICE 留空時 compose 顯示 stack 內全部服務。
+logs:
+	$(guard)
+	$(PROJECT) docker compose $(STACK) logs -f --tail=100 $(SERVICE)
