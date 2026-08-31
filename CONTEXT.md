@@ -56,3 +56,15 @@ promotion、rollback、稽核都靠它。慣例上不可變。
 **IMAGE / TAG**:
 `make deploy` 的兩個必填參數，決定要拉哪顆映像。environment 不「知道」自己該跑哪一版——
 版本永遠是傳入的，由 promotion 流程或人工 rollback 決定。
+
+### Observability
+
+**Request ID**:
+一次 HTTP 請求的識別碼，由 nginx 在第一跳產生並覆蓋外部傳入值，backend 沿用、每行 log 都帶著、
+以 `X-Request-ID` 回給瀏覽器。是「把某次請求的所有 log 撈出來」的唯一鍵。
+_Avoid_: correlation id、trace id（trace id 是日後 OpenTelemetry 的概念，屆時再對應）
+
+**Request log**:
+每個 HTTP 請求**結束時**由 backend 發出的那一行（事件名 `request.completed`），含 status、耗時與 Request ID。
+`/health` 不產生 request log。
+_Avoid_: access log（那專指 nginx 的那行，以及已停用的 uvicorn 內建行）

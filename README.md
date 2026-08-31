@@ -79,7 +79,7 @@ frontend 綁到主機的 `HTTP_PORT`（各 environment 不同埠，可同機並�
 ├── backend/                    # FastAPI + uv（多階段：dev 含測試工具、runtime 出貨非 root）
 │   ├── app/main.py             # /health、/api/message（回傳目前環境）
 │   ├── app/config.py           # pydantic-settings：從環境變數讀設定
-│   ├── app/observability.py    # structlog：app 與 uvicorn 的 log 同一格式寫 stdout
+│   ├── app/observability.py    # structlog：log 同一格式寫 stdout；Request ID 與 request log 的 middleware
 │   ├── tests/  ·  pyproject.toml · uv.lock  ·  Dockerfile
 ├── frontend/                   # React + Vite（node→nginx 多階段）
 │   ├── src/App.jsx  ·  nginx.conf（供靜態檔 + 反向代理 /api）
