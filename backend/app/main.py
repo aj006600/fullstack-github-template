@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 
 from app.config import settings
+from app.observability import configure_logging
+
+configure_logging(settings)
 
 app = FastAPI(title="fullstack-github-template backend", version="0.1.0")
 

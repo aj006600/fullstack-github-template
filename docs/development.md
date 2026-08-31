@@ -53,6 +53,22 @@ make check     # 驗證部署設定（不啟動容器）
 
 `make check` 是另一回事——它不碰程式碼，只驗那些**錯了不會當場報錯**的部署設定。改了 `compose*.yaml`、`env/` 或 `Makefile` 之後跑一次；驗什麼、為什麼要驗，見 Makefile 的 `check` target 註釋。
 
+## Reading logs
+
+backend 的每一行 log——app 自己的、uvicorn 的啟動訊息、未捕捉例外的 traceback——都寫到 stdout、同一種格式。
+`make dev` 前景看到的是彩色的 `key=value` 格式（`LOG_FORMAT=console`，只在 `compose.dev.yaml` 覆寫）：
+
+```
+2026-08-31T05:32:29.335394Z [info     ] Application startup complete. [uvicorn.error]
+2026-08-31T05:32:48.467303Z [info     ] 192.168.65.1:48871 - "GET /api/message HTTP/1.1" 200 [uvicorn.access]
+```
+
+依序是時間、等級、事件名、logger 名，之後是該行的欄位。部署時同一批 log 是一行一筆的 JSON
+（預設值，見 [deployment.md](deployment.md#2-configure-each-environment)）。
+
+- **等級**由 `env/.env.dev` 的 `LOG_LEVEL` 決定（`debug` ｜ `info` ｜ `warning` ｜ `error`），對 app 與 uvicorn 都生效；打錯字時服務啟動就失敗。
+- `uvicorn --reload` 的 **reloader 行**例外（`Will watch for changes` / `Uvicorn running on` / `Started reloader process` / `WatchFiles detected changes`）：它們來自不載入 app 的監看 process，仍是 uvicorn 原生的 `INFO:` 格式。
+
 ## Entering containers (docker exec)
 
 承上，改程式碼靠 hot reload 即可、**不需進 container**；跑測試 / lint 用上方的 `make test` / `make lint` 也免進。進 container 是為了「在 container 內執行指令 / 檢查 / 除錯」——例如查看環境變數、執行一次性腳本、確認相依安裝。
@@ -81,7 +97,7 @@ Container 內：後端工作目錄為 `/app`、程式在 `/app/app`、venv 在 `
 ```bash
 # 後端
 cd backend && uv sync --dev
-APP_ENV=dev uv run uvicorn app.main:app --reload   # :8000
+APP_ENV=dev LOG_FORMAT=console uv run uvicorn app.main:app --reload   # :8000（LOG_FORMAT 不設則是 JSON）
 uv run pytest -q
 
 # 前端（另開終端機）

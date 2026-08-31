@@ -78,10 +78,12 @@ dev-down:
 # --user：dev stage 以 root 跑，ruff format 會把掛載的檔案寫成 root 所有，Linux 上之後編輯不了
 #         （macOS 的 Docker Desktop 會轉譯所有權，看不出問題）。
 # 快取改到 /tmp：換成你的 uid 後，寫不進映像裡 root 擁有的 /app。
+# LOG_FORMAT=json：測試斷言 stdout 上的 JSON 行，而 run 會繼承 compose.dev.yaml 給 make dev 的 console 覆寫。
 RUNDEV = docker compose $(DEV) run --build --rm \
 	--user $(shell id -u):$(shell id -g) \
 	-e RUFF_CACHE_DIR=/tmp/.ruff_cache \
 	-e PYTEST_ADDOPTS="-p no:cacheprovider" \
+	-e LOG_FORMAT=json \
 	backend
 
 test:

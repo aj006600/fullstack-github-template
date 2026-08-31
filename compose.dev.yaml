@@ -1,4 +1,8 @@
 # 本機開發 override：make dev → localhost:3000 / :8000，後端 hot reload。
+#
+# 這是唯一允許讓行為偏離部署版的檔案：hot reload、dev stage、console 格式的 log 都只住這裡。
+# 其他檔案（compose.yaml、compose.deploy.yaml、env/.env.*、Dockerfile 的 runtime stage）
+# 一律以部署行為為準，本機專屬的東西不得漏進去。
 services:
   backend:
     build:
@@ -9,6 +13,8 @@ services:
       - ./backend/tests:/app/tests
     ports:
       - "8000:8000"
+    environment:
+      - LOG_FORMAT=console   # 部署一律 json（設定的預設值）；只有本機前景需要人看得懂的格式
 
   frontend:
     ports:
