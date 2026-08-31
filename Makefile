@@ -20,7 +20,7 @@ ENVS_TXT := $(shell echo "$(ENVS)" | sed 's/ / | /g')
 # 比對推導出的清單而非 test -f：否則 ENV=dev.local 這種 check 從不驗證的組合會過關。
 guard = @test -n "$(filter $(ENV),$(ENVS))" || { echo "ENV=$(ENV) 無效。可用：$(ENVS_TXT)"; exit 1; }
 
-.PHONY: help init dev dev-down test lint format check down deploy ps
+.PHONY: help init dev dev-down test lint format check down deploy ps logs
 
 help:
 	@echo "Setup（從 template 開新專案時做一次）"
@@ -40,6 +40,7 @@ help:
 	@echo ""
 	@echo "Inspection"
 	@echo "  make ps                           正在跑的 container（名稱 / 狀態 / 埠）"
+	@echo "  make logs    ENV=… [SERVICE=…]    tail 該環境的 log（SERVICE = backend | frontend，預設兩者）"
 
 # >>> init（make init 會刪掉這整段，不要移除這兩行標記）
 # ── Project init（一次性）──
@@ -78,10 +79,12 @@ dev-down:
 # --user：dev stage 以 root 跑，ruff format 會把掛載的檔案寫成 root 所有，Linux 上之後編輯不了
 #         （macOS 的 Docker Desktop 會轉譯所有權，看不出問題）。
 # 快取改到 /tmp：換成你的 uid 後，寫不進映像裡 root 擁有的 /app。
+# LOG_FORMAT=json：測試斷言 stdout 上的 JSON 行，而 run 會繼承 compose.dev.yaml 給 make dev 的 console 覆寫。
 RUNDEV = docker compose $(DEV) run --build --rm \
 	--user $(shell id -u):$(shell id -g) \
 	-e RUFF_CACHE_DIR=/tmp/.ruff_cache \
 	-e PYTEST_ADDOPTS="-p no:cacheprovider" \
+	-e LOG_FORMAT=json \
 	backend
 
 test:
@@ -134,3 +137,9 @@ down:
 
 ps:
 	docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+
+# 帶 project 名與 env 檔：手打會漏掉 -p 而看到別的環境（或什麼都看不到）。
+# SERVICE 留空時 compose 顯示 stack 內全部服務。
+logs:
+	$(guard)
+	$(PROJECT) docker compose $(STACK) logs -f --tail=100 $(SERVICE)

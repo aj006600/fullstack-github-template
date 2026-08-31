@@ -38,6 +38,13 @@ GitHub 上按「Use this template」（或 clone 本 repo），改成你的 app�
 
 `.local` 疊在前者之上，**同名變數以 `.local` 為準**；沒有 `.local` 的機器照常啟動。
 
+| 變數 | 值 | 說明 |
+|------|----|------|
+| `LOG_LEVEL` | `debug` ｜ `info` ｜ `warning` ｜ `error`（小寫） | 對 app 與 uvicorn 都生效；打錯字或大寫時 container 啟動就失敗，不會靜默退回預設值 |
+| `LOG_FORMAT` | 預設 `json`，**env 檔不寫** | 部署一律一行一筆 JSON 到 stdout；`console` 只給 `make dev`，由 `compose.dev.yaml` 覆寫 |
+
+三個 environment 的 log 設定只差 `LOG_LEVEL`，格式一致。
+
 ```bash
 # 在目標主機上，例如 prod
 cat > env/.env.prod.local <<'EOF'
@@ -109,6 +116,36 @@ make ps              # 看狀態
 
 > 要 domain 導流或 TLS？在前面加一層 reverse proxy 是那台主機的事，不在本 repo 的範圍
 > （見 [roadmap.md](roadmap.md)）。
+
+---
+
+## Reading logs
+
+```bash
+make logs ENV=<dev|qas|prod>                    # tail 該 environment 的 backend + frontend
+make logs ENV=<dev|qas|prod> SERVICE=backend    # 只看單一服務（backend | frontend）
+```
+
+它帶上 project 名與 env 檔，等同 `docker compose -p fullstack-<env> -f compose.yaml -f compose.deploy.yaml --env-file env/.env.<env> logs -f --tail=100`——
+手打時漏掉 `-p` 會看到別的環境（或什麼都看不到），`ENV` 打錯字會得到與 `make deploy` 相同的錯誤訊息。
+
+backend 的每一行 log 都是一筆 JSON（`LOG_FORMAT` 預設 `json`，見上方 [Configure each environment](#2-configure-each-environment)）：
+
+```json
+{"event": "Application startup complete.", "logger": "uvicorn.error", "level": "info", "timestamp": "2026-08-31T05:39:46.104734Z"}
+```
+
+可直接接 `jq`，例如只看 warning 以上：
+
+```bash
+make logs ENV=prod SERVICE=backend 2>&1 | grep -o '{.*}' | jq -c 'select(.level != "info")'
+```
+
+frontend（nginx）維持 nginx 原生的文字格式 access log。
+
+**輪替**：部署的兩個 container 都用 `json-file` driver、單檔 10 MB、最多 3 檔（`compose.deploy.yaml`），
+每個 container 的 log 上限 **30 MB**，超過就丟最舊的——長期運行不會填滿磁碟。需要更長的保存期，
+接集中式 log 平台（見 [roadmap.md](roadmap.md)），不是把上限調大。
 
 ---
 
