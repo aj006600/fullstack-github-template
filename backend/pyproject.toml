@@ -4,9 +4,9 @@ version = "0.1.0"
 description = "Fullstack multi-env 範本後端（FastAPI + uv）"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi==0.115.6",
-    "uvicorn[standard]==0.34.0",
-    "pydantic-settings==2.7.1",
+    "fastapi==0.141.1",
+    "uvicorn[standard]==0.52.4",
+    "pydantic-settings==2.15.0",
     "structlog==26.1.0",
 ]
 
@@ -14,7 +14,7 @@ dependencies = [
 dev = [
     "pytest>=8.3.4",
     "httpx>=0.28.1",
-    "ruff>=0.16.1",
+    "ruff>=0.16.5",
 ]
 
 [tool.uv]
