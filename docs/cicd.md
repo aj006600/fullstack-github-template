@@ -50,6 +50,10 @@ ghcr.io/<your-account>/<your-repo>-backend:<git-sha>
 ghcr.io/<your-account>/<your-repo>-frontend:<git-sha>
 ```
 
+> **template repo 本身不 build image**：它設了 repo variable `SKIP_IMAGE_PUBLISH=true`，`build` job
+> 與 `cleanup.yml` 都會跳過（template 不部署，不需要 `:sha` 映像）。repo variable 不會被
+> 「Use this template」複製，所以從 template 開出來的新專案不用做任何設定，CI 照常 build。
+
 ## Deploy execution: make deploy
 
 Deployment = 在**目標主機**上「拉 CI 測過的不可變 image + `up -d`」，**不在主機重 build**（在主機重 build 會破壞 build-once 的保證）：
