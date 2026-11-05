@@ -5,7 +5,7 @@ COPY pyproject.toml uv.lock ./
 ENV PATH="/app/.venv/bin:$PATH"
 
 # dev：含 dev 相依（pytest、ruff），只給本機用，永不部署。
-# 「dev stage」與「APP_ENV=dev 環境」是兩個維度：前者決定 image 內容，後者決定載入哪份 env/.env.*
+# 「dev stage」與「ENV=dev 環境」是兩個維度：前者決定 image 內容，後者決定主機載入哪份 .env.<env>
 FROM base AS dev
 RUN uv sync --frozen
 COPY app ./app

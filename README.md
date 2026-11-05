@@ -1,49 +1,38 @@
 # fullstack-github-template
 
 前後端分離 + 多環境（dev / qas / prod）的容器範本：React(Vite) 前端 + FastAPI 後端，
-用 docker compose 兜起來，CI/CD 遵循「build 一次、依序 promote」的業界最佳實踐。
+用 docker compose 兜起來，GitHub Actions 遵循「build 一次、依序 promote」。
 
-> 核心原則（12-factor）：**一份程式碼、一組 image、設定隨環境變**。絕不複製程式碼，環境差異只在設定。
+> 核心原則（12-factor）：**一份程式碼、一組 image、設定隨環境變**。設定一律是環境變數：
+> 本機讀 `.env.local`（從 `.env.example` 複製，不進版控），目標主機讀自備的 `.env.<env>`。
 
 ## Docs
 
 | 想做的事 | 看這份 |
 |----------|--------|
-| **搞懂核心觀念**（一顆 image 多環境、build vs registry、本機 vs CI/CD） | [docs/concepts.md](docs/concepts.md) |
-| **本機開發**（quickstart、hot reload、docker exec、查看跑了什麼） | [docs/development.md](docs/development.md) |
-| **部署**（多環境同機並存、怎麼連上、troubleshooting） | [docs/deployment.md](docs/deployment.md) |
-| **CI/CD 與發版**（promotion、rollback、GitHub 設定、image 清理） | [docs/cicd.md](docs/cicd.md) |
-| **上 production 前還要加什麼**（Secrets/TLS/DB/健康檢查…） | [docs/roadmap.md](docs/roadmap.md) |
-| **術語**（`dev` 的三個意思、up vs deploy…） | [CONTEXT.md](CONTEXT.md) |
+| **本機開發**（quickstart、設定、hot reload、測試、log、docker exec） | [docs/development.md](docs/development.md) |
+| **CI/CD 與部署**（promotion、rollback、主機設定、log、troubleshooting） | [docs/deployment.md](docs/deployment.md) |
+| **術語**（`dev` 的三個意思、Request ID…） | [CONTEXT.md](CONTEXT.md) |
 
 ## Make it yours
 
-從這個 template 開了新 repo 之後，先跑一次：
+1. GitHub 上按 **Use this template** 開新 repo，clone 下來。
+2. **改名**——在 repo 根目錄執行，`<your-app>` 換成你的專案名（小寫英數與連字號，會用在 image 名與 compose project 名）：
+   ```bash
+   NAME=<your-app>
+   git ls-files -z | xargs -0 perl -pi -e "s/fullstack-github-template/$NAME/gi; s/fullstack/$NAME/gi"
+   ```
+   兩條規則的順序不能反：先換長的，否則 `fullstack-github-template` 會被切成 `<your-app>-github-template`。
+3. **換上自己的 README 與 CONTEXT.md**——刪掉後為專案寫專屬的：`rm README.md CONTEXT.md`。
+4. `git diff` 檢查一遍，commit、push。
 
-```bash
-make init APP_NAME=my-app
-```
-
-它會把 template 的名字換成 `my-app`——container 與 network 名、本機 build 的 image 名，
-以及 README 標題、頁面 title 這些沒有插值能力的地方。
-同時移除 `make init` 自己，以及只服務於「蓋這個 template」的東西——`CLAUDE.md`、`docs/agents/`、
-`CONTEXT.md`、`docs/{concepts,cicd,roadmap}.md`、`docs/adr/`，並把這份 README 換成指向 `docs/` 的骨架
-（`docs/development.md` 與 `docs/deployment.md` 留著）。
-
-> 需要乾淨的工作區——它會改動十幾個檔案，這樣你隨時可以 `git checkout .` 反悔。
-> 跑完 `git diff` 檢查一遍再 commit。
-
-這是**單向**的：跑完之後你的專案與這個 template 永久分岔，上游日後的修正不會流過來。
-理由與代價見 [ADR-0001](docs/adr/0001-one-way-fork-from-template.md)。
+之後新專案與這個 template 各走各的，template 日後的修正不會自動流過去。
 
 ## Quickstart
 
-> 需要 **Docker Compose 2.24+**（`env_file` 的 `required: false` 疊加語法，機密設定靠它）。
-> `docker compose version` 確認；太舊的話錯誤訊息是 `env_file.1 must be a string`。
-
 ```bash
-make dev       # 前後端起來，後端 hot reload（前景執行）
-# 前端 → http://localhost:3000（會顯示 backend 回傳的環境）
+make dev       # 前後端起來，後端 hot reload（前景執行）；缺 .env.local 時自動從 .env.example 複製
+# 前端 → http://localhost:3000（會顯示 backend 回傳的環境 local）
 # 後端 → http://localhost:8000/health
 make dev-down  # 停止並清理（或直接 Ctrl+C 停止；詳見 docs/development.md）
 
@@ -59,18 +48,18 @@ make help      # 所有指令與參數
 
 ## Deployment
 
-部署在**目標主機**（amd64 Linux）上執行，拉 CI 測過的不可變映像，不重 build：
+merge 到 `main` 後 CI 會 build 出該 commit 的 `:sha` 推到 GHCR；部署在**目標主機**（amd64 Linux）上執行，
+拉這顆測過的映像，不重 build。主機要自備該環境的 `.env.<env>`：
 
 ```bash
-make deploy ENV=<dev|qas|prod> IMAGE=… TAG=…   # 拉指定版本並啟動
-make down   ENV=<dev|qas|prod>                 # 停止
+make deploy ENV=<dev|qas|prod> IMAGE=ghcr.io/<your-account>/<your-repo> TAG=<git-sha>   # 拉指定版本並啟動
+make down   ENV=<dev|qas|prod>                                                        # 停止
 ```
 
 > 刻意只有這一條部署路徑：在主機上從原始碼 build 會破壞「dev 測過的就是上 prod 的那顆」。
 > 開發機請用 `make dev`。
 
-frontend 綁到主機的 `HTTP_PORT`（各 environment 不同埠，可同機並存）。
-怎麼連上、troubleshooting 見 [docs/deployment.md](docs/deployment.md)。
+流程、rollback、主機設定與 troubleshooting 見 [docs/deployment.md](docs/deployment.md)。
 
 ## Structure
 
@@ -87,13 +76,11 @@ frontend 綁到主機的 `HTTP_PORT`（各 environment 不同埠，可同機並�
 ├── compose.yaml                # base：只定義服務與內部接線（不決定對外曝露）
 ├── compose.dev.yaml            # 本機開發覆寫：開 localhost 埠 + 後端 hot reload + console log（唯一可偏離部署行為的檔案）
 ├── compose.deploy.yaml         # 部署覆寫：frontend 綁主機的 HTTP_PORT + log 輪替（10m × 3）
-├── env/{.env.dev,.env.qas,.env.prod}   # 各環境的非機密設定（機密走同名 .local，不進版控）
-├── Makefile                    # init / dev / test·lint·format·check / deploy·down / ps·logs
+├── .env.example                # 設定變數清單（進版控）；make dev 會複製成 .env.local
+├── Makefile                    # dev / test·lint·format / deploy·down / ps·logs
 ├── CONTEXT.md                  # 術語表（唯一定義處）
-├── .github/
-│   ├── workflows/
-│   │   ├── ci-cd.yml           # merge→build :sha（部署由人在主機上執行）
-│   │   └── cleanup.yml         # 每週清理舊 image
-│   └── dependabot.yml          # 每週開 PR 更新相依（後端 uv、前端 npm、Actions）
-└── docs/                       # 詳細文檔（見上方 Docs）
+├── .github/workflows/
+│   ├── ci-cd.yml               # PR 跑測試；merge→build :sha（部署由人在主機上執行）
+│   └── cleanup.yml             # 每週清理舊 image
+└── docs/                       # development.md · deployment.md
 ```
