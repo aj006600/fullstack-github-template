@@ -8,8 +8,6 @@ on:
 
 jobs:
   cleanup:
-    # 沒推 image 的 repo（template 本身，見 ci-cd.yml 的 build job）沒東西可清，整個 job 跳過
-    if: vars.SKIP_IMAGE_PUBLISH != 'true'
     runs-on: ubuntu-latest
     permissions:
       packages: write

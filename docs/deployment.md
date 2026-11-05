@@ -28,10 +28,6 @@ ghcr.io/<your-account>/<your-repo>-backend:<git-sha>
 ghcr.io/<your-account>/<your-repo>-frontend:<git-sha>
 ```
 
-> **template repo 本身不 build image**：它設了 repo variable `SKIP_IMAGE_PUBLISH=true`，`build` job
-> 與 `cleanup.yml` 都會跳過（template 不部署，不需要 `:sha` 映像）。repo variable 不會被
-> 「Use this template」複製，所以從 template 開出來的新專案不用做任何設定，CI 照常 build。
-
 **Image cleanup**：`.github/workflows/cleanup.yml` 每週一跑一次，兩個 service 各只留最近 20 個 `:sha`、
 刪 untagged。這個數字就是**所有環境（含 prod）**能 rollback 回多舊：prod 停在某顆 sha 期間 main 前進超過
 20 個 commit，那顆 sha 會被清（正在跑的 container 不受影響，但無法再從 registry 部署）。不夠用時調大

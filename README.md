@@ -28,6 +28,10 @@
 
 之後新專案與這個 template 各走各的，template 日後的修正不會自動流過去。
 
+> 這個 template repo 本身**停用了 GitHub Actions**：`.github/workflows/` 是給開出來的新專案用的。
+> 這個設定不會被「Use this template」複製，新專案的 Actions 預設啟用，不用做任何設定。
+> 改 template 時在本機跑 `make test`、`make lint` 驗證。
+
 ## Quickstart
 
 ```bash
