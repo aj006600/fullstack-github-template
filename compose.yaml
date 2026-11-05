@@ -6,14 +6,11 @@ services:
     # make deploy 傳入 IMAGE/TAG 改拉 CI 建好的映像
     image: ${IMAGE:-${APP_NAME:-fullstack}}-backend:${TAG:-latest}
     restart: unless-stopped
-    # 兩層：進版控的非機密設定，加上一層同名 .local 的機密疊加（不進版控，每台主機自己建）。
-    # required: false 讓沒有 .local 的機器照常啟動；後載入的覆蓋同名變數。
-    # 只影響 container 內的環境變數——compose 檔自身的插值（HTTP_PORT）走 Makefile 的
-    # --env-file，讀不到 .local。詳見 docs/deployment.md。
+    # 唯一設定來源，不進版控：make dev 用 .env.local，make deploy 用主機自備的 .env.<env>。
+    # 用專職的 ENV_FILE 選檔，不用 APP_ENV 的值反推：否則主機忘了改檔裡的 APP_ENV，
+    # 就會安靜地載到別的環境的設定。
     env_file:
-      - env/.env.${APP_ENV:-dev}
-      - path: env/.env.${APP_ENV:-dev}.local
-        required: false
+      - ${ENV_FILE:-.env.local}
     # 不對外開埠；由 frontend 的 nginx 以服務名 backend 代理 /api
     # 用 python 而非 curl：bookworm-slim 沒有 curl/wget
     healthcheck:
