@@ -59,9 +59,11 @@ jobs:
       - run: make check
 
   # ========== merge 到 main：build 兩個映像（部署由人在主機上執行）==========
+  # template repo 本身設了 repo variable SKIP_IMAGE_PUBLISH=true：它不部署，不需要 :sha 映像。
+  # repo variable 不會被「Use this template」複製，所以新專案不用改任何東西，照常 build。
   build:
     needs: [test-backend, build-frontend, check-compose]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.SKIP_IMAGE_PUBLISH != 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
