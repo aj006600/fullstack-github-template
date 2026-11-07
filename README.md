@@ -25,14 +25,14 @@
    git ls-files -z | xargs -0 perl -pi -e "s/fullstack-github-template/$NAME/g; s/fullstack/$NAME/g"
    ```
 3. **加自己的設定變數**:`.env.example` 是變數清單(進版控),新增變數先加在這裡;本機實際讀的 `.env.local` 由 `make dev` 自動建立,不必手動處理。
-4. **換上自己的 README 與 CONTEXT.md**——刪掉後為專案寫專屬的:
-   ```bash
-   rm README.md CONTEXT.md
-   ```
+4. **換上自己的 README**——`rm README.md` 後為專案寫專屬的。
 5. **commit、push**。第一次出貨:`git tag v0.1.0 && git push origin v0.1.0`,見 [docs/deployment.md](docs/deployment.md)。
 
 > 這個 template repo 本身**停用了 GitHub Actions**:`.github/workflows/` 是給開出來的新專案用的,
 > 改 template 時在本機跑 `make test`、`make lint` 驗證。
+>
+> template 刻意不帶 agent 設定(`CLAUDE.md`、`.claude/`、`docs/agents/`、`CONTEXT.md`):
+> 要用 Claude Code 協作時,照 [oh-my-claude-setup](https://github.com/aj006600/oh-my-claude-setup/tree/main/claude-code-setup-v2) 的步驟裝進新專案。
 
 ## Structure
 
