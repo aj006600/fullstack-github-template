@@ -1,6 +1,6 @@
 # fullstack-github-template
 
-前後端分離 + 多環境（dev / qas / prod）的容器範本：React(Vite) 前端 + FastAPI 後端，
+前後端分離 + 多環境（dev / qas / prd）的容器範本：React(Vite) 前端 + FastAPI 後端，
 用 docker compose 兜起來，GitHub Actions 遵循「build 一次、依序 promote」。
 
 > 核心原則（12-factor）：**一份程式碼、一組 image、設定隨環境變**。設定一律是環境變數：
@@ -52,15 +52,16 @@ make help      # 所有指令與參數
 
 ## Deployment
 
-merge 到 `main` 後 CI 會 build 出該 commit 的 `:sha` 推到 GHCR；部署在**目標主機**（amd64 Linux）上執行，
-拉這顆測過的映像，不重 build。主機要自備該環境的 `.env.<env>`：
+merge 到 `main` 只跑測試；打 Release tag（`vX.Y.Z`）時 CI 才 build image 推到 GHCR。部署在
+**目標主機**（amd64 Linux）上執行，拉該 Release 的 image，不重 build。主機要自備該環境的 `.env.<env>`：
 
 ```bash
-make deploy ENV=<dev|qas|prod> IMAGE=ghcr.io/<your-account>/<your-repo> TAG=<git-sha>   # 拉指定版本並啟動
-make down   ENV=<dev|qas|prod>                                                        # 停止
+git tag v0.1.0 && git push origin v0.1.0   # Release：CI build 並推 :v0.1.0
+make deploy ENV=<dev|qas|prd> TAG=v0.1.0   # 在主機上：拉該 Release 並啟動
+make down   ENV=<dev|qas|prd>              # 停止
 ```
 
-> 刻意只有這一條部署路徑：在主機上從原始碼 build 會破壞「dev 測過的就是上 prod 的那顆」。
+> 刻意只有這一條部署路徑：在主機上從原始碼 build 會破壞「dev 測過的就是上 prd 的那顆」。
 > 開發機請用 `make dev`。
 
 流程、rollback、主機設定與 troubleshooting 見 [docs/deployment.md](docs/deployment.md)。
@@ -84,7 +85,6 @@ make down   ENV=<dev|qas|prod>                                                  
 ├── Makefile                    # dev / test·lint·format / deploy·down / ps·logs
 ├── CONTEXT.md                  # 術語表（唯一定義處）
 ├── .github/workflows/
-│   ├── ci-cd.yml               # PR 跑測試；merge→build :sha（部署由人在主機上執行）
-│   └── cleanup.yml             # 每週清理舊 image
+│   └── ci-cd.yml               # PR / main 跑測試；Release tag → build 推 GHCR（部署由人在主機上執行）
 └── docs/                       # development.md · deployment.md
 ```

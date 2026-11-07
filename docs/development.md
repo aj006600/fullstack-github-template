@@ -106,7 +106,7 @@ docker exec -it <容器名> bash    # 後端；前端用 sh
 
 Container 內：後端工作目錄為 `/app`、程式在 `/app/app`、venv 在 `/app/.venv`（`uvicorn`、`pytest` 等已在 PATH）。`make dev` 的後端容器跑 Dockerfile 的 **dev stage、以 root 執行**（開發便利、可直接裝系統套件）；部署用的 **runtime stage 才以非 root `appuser` 執行**（前端 nginx 則一律預設 root）。
 
-> 上述指令針對 `make dev`。若跑的是部署（`make deploy`，runtime stage），各 environment 的 project 名不同（`fullstack-dev` / `fullstack-qas` / `fullstack-prod`），用 `docker ps` 查容器名後以 `docker exec -it <容器名> …` 進入；容器內是 `appuser`，需要 root 時加 `-u root`。
+> 上述指令針對 `make dev`。若跑的是部署（`make deploy`，runtime stage），各 environment 的 project 名不同（`fullstack-dev` / `fullstack-qas` / `fullstack-prd`），用 `docker ps` 查容器名後以 `docker exec -it <容器名> …` 進入；容器內是 `appuser`，需要 root 時加 `-u root`。
 
 ## Working without containers
 

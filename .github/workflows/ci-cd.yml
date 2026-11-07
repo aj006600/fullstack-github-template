@@ -1,25 +1,21 @@
 name: CI/CD
 
-# main 上的每個 commit 都必須有對應的 :sha 映像——promote、rollback、bisect 都靠這個不變量。
-# 所以不設 paths-ignore（純文件 commit 也照建）；重複建置的成本由下方 build cache 吸收。
+# PR 與 main 只跑測試；只有 Release（vX.Y.Z tag）才 build image 推 GHCR，tag 原樣就是 image tag。
+# 只認這個形狀：「是 tag 就 build」的話，latest、wip 這類 tag 也會變成 image。
 on:
   push:
     branches: [main]
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
   pull_request:
     branches: [main]
 
-# 同一個 ref 一次只跑一條：兩個 build 同時寫同一個 GHA cache scope 會互相覆蓋，
-# 而且 CD 一旦接上主機，部署順序就需要它。
-# PR 例外：新 commit 直接取消舊 run。
+# 同一個 ref 一次只跑一條；PR 例外：新 commit 直接取消舊 run。
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-env:
-  IMAGE: ghcr.io/${{ github.repository }}
-
 jobs:
-  # ---------- CI：後端測試（PR / main 都跑）----------
+  # ---------- CI：後端測試（PR / main / Release 都跑）----------
   test-backend:
     runs-on: ubuntu-latest
     defaults:
@@ -49,45 +45,37 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-  # ========== merge 到 main：build 兩個映像（部署由人在主機上執行）==========
+  # ========== Release：build 兩顆 image 推 GHCR（部署由人在主機上執行）==========
   build:
     needs: [test-backend, build-frontend]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    strategy:
-      matrix:
-        service: [backend, frontend]
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+      TAG: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v4
-      # cache 匯出需要 buildx 的 container driver；預設 docker driver 不支援 type=gha
-      - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: ./${{ matrix.service }}
-          push: true
-          tags: ${{ env.IMAGE }}-${{ matrix.service }}:${{ github.sha }}
-          # scope 必須分開：兩個 matrix job 共用同一組 cache key 會互相覆寫
-          # mode=max 才會快取多階段建置的中間 stage（backend 有 base/dev/runtime）
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+      # 不指定 target：Docker 建最後一個 stage，也就是 runtime（見 backend/Dockerfile）
+      - run: |
+          for svc in backend frontend; do
+            docker build --tag "$IMAGE-$svc:$TAG" "$svc"
+            docker push "$IMAGE-$svc:$TAG"
+          done
 
-      # 部署指令印在 run summary，把 sha 直接填好省得回頭查。CD 不連線主機——部署是人在
-      # 目標主機上跑的。
-      # 限定單一 matrix leg：不加這個條件，backend 與 frontend 會各印一份一模一樣的區塊。
-      - if: matrix.service == 'backend'
-        run: |
+      # 部署指令印在 run summary，tag 直接填好省得回頭查
+      - run: |
           {
-            echo "### 部署這個 commit"
+            echo "### 部署 $TAG"
             echo "在目標主機上執行："
             echo '```bash'
-            echo "make deploy ENV=<dev|qas|prod> IMAGE=${{ env.IMAGE }} TAG=${{ github.sha }}"
+            echo "make deploy ENV=<dev|qas|prd> IMAGE=$IMAGE TAG=$TAG"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

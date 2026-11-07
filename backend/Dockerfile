@@ -13,7 +13,7 @@ COPY tests ./tests
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
-# runtime：出貨用，dev/qas/prod 三環境共用同一顆。
+# runtime：出貨用，dev/qas/prd 三環境共用同一顆。
 # 必須留在最後：CI 的 build job 與 compose.yaml 的 base build 都沒指定 target，
 # Docker 會建「最後一個」stage；調換順序會讓裝了測試工具的 dev image 被推上 production。
 # （只有 compose.dev.yaml 明確指定 target: dev。）
