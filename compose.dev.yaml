@@ -1,20 +1,14 @@
-# 本機開發 override：make dev → localhost:3000 / :8000，後端 hot reload。
-#
-# 這是唯一允許讓行為偏離部署版的檔案：hot reload、dev stage、console 格式的 log 都只住這裡。
-# 其他檔案（compose.yaml、compose.deploy.yaml、Dockerfile 的 runtime stage）
-# 一律以部署行為為準，本機專屬的東西不得漏進去。
+# 本機開發 override:make dev → localhost:3000 / :8000,後端 hot reload。
 services:
   backend:
     build:
       context: ./backend
-      target: dev            # dev stage 含 pytest/ruff；啟動指令（--reload）由該 stage 的 CMD 提供
+      target: dev            # dev stage 含 pytest/ruff;啟動指令(--reload)由該 stage 的 CMD 提供
     volumes:
       - ./backend/app:/app/app
       - ./backend/tests:/app/tests
     ports:
       - "8000:8000"
-    environment:
-      - LOG_FORMAT=console   # 預設 json；只有本機前景需要人看得懂的格式
 
   frontend:
     ports:

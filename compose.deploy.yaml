@@ -1,10 +1,6 @@
-# 部署 override：frontend 綁到主機的某個埠，兩個服務的 log 都設上限與輪替。
-# 多個 environment 同機並存時各用不同 HTTP_PORT；某個 environment 獨佔一台主機時，
-# 把該主機上那份 env 檔的 HTTP_PORT 設成 80，網址就不必帶埠（見 docs/deployment.md）。
-# 刻意不給預設值：漏填直接 fail，不默默退回 80 綁錯埠。
-#
-# Log 輪替：docker 預設的 json-file driver 沒有上限，長期運行會填滿主機磁碟。
-# 只放這裡不放 base：make dev 是前景執行、Ctrl-C 就結束，不需要。
+# 部署 override:frontend 綁主機 HTTP_PORT(同機多環境各用不同埠;獨佔主機設 80 免帶埠)。
+# 刻意不給預設值:漏填直接 fail,不默默退回 80。
+# log 輪替:docker 預設的 json-file driver 沒有上限,長期運行會填滿主機磁碟。
 x-logging: &logging
   driver: json-file
   options:

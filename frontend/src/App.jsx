@@ -12,7 +12,7 @@ export default function App() {
 
   return (
     <main style={{ fontFamily: 'sans-serif', padding: '2rem' }}>
-      <h1>Fullstack Multi-env</h1>
+      <h1>Fullstack GitHub Template</h1>
       <p>
         Backend says: <strong>{info.message}</strong>
       </p>

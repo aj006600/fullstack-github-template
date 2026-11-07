@@ -1,5 +1,3 @@
-# fullstack-github-template
-
 ## Conventions
 
 - **Commit message**:輕量 Conventional Commits,英文——`<type>: <description>`,type 取 `feat/fix/docs/test/refactor/chore`,scope 選用(`feat(api): ...` 也可)。
@@ -7,7 +5,6 @@
 - **文件語言**:章節標題英文(`## Quick Start`)、內文繁體中文、技術術語保留英文(fixture、endpoint 不翻譯)。
 - **文檔同步**:user-facing 變更(指令、架構、安裝步驟)在**同一個 PR** 內同步 README/docs——文檔更新是變更的一部分,不是事後待辦。
 - **程式碼註釋**:繁體中文(術語英文),**不用 emoji**。只寫 code 讀不出來的**約束、陷阱、非顯然理由**(why not what);不敘述下一行做什麼;概念解說住 `docs/`,註釋需要時用一行連結指向,不重述。
-- **Log**:structured——事件名 `名詞.動詞`、欄位 key=value,用專案既有 logger 不用 `print`。等級:`debug` 只給開發者、`info` 業務動作完成、`warning` 異常已自行處理、`error` 需人介入且帶 exception。不記 secrets/PII;例外只在最外層記一次。
 - **規則提議**:同類糾正或卡關**第二次**發生(或一次但代價高:不可逆操作、部署事故級),主動提議把教訓寫進來——先展示擬新增的那一行與觸發原因,我同意才寫。歸位優先序:能用工具強制的進工具/CI → 綁定單檔的進該檔註釋 → 概念進 `docs/` → 決策進 `docs/adr/` → 都不是且每個 session 都適用,才進 CLAUDE.md。
 
 ## Agent skills

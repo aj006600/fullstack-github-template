@@ -1,18 +1,16 @@
-# Base：只定義服務與內部接線；對外曝露由 override 決定（compose.dev.yaml / compose.deploy.yaml）。
+# Base:只定義服務與內部接線;對外曝露由 override 決定(compose.dev.yaml / compose.deploy.yaml)。
 services:
   backend:
     build: ./backend
-    # 本機 build 預設 <APP_NAME>-backend:latest（APP_NAME 由 Makefile 帶入）；
-    # make deploy 傳入 IMAGE/TAG 改拉 CI 建好的映像
+    # 本機 build 預設 <APP_NAME>-backend:latest;make deploy 傳入 IMAGE/TAG 改拉 CI 映像
     image: ${IMAGE:-${APP_NAME:-fullstack}}-backend:${TAG:-latest}
     restart: unless-stopped
-    # 唯一設定來源，不進版控：make dev 用 .env.local，make deploy 用主機自備的 .env.<env>。
-    # 用專職的 ENV_FILE 選檔，不用 APP_ENV 的值反推：否則主機忘了改檔裡的 APP_ENV，
+    # 唯一設定來源,不進版控:make dev 用 .env.local,make deploy 用主機自備的 .env.<env>。
+    # 用專職的 ENV_FILE 選檔,不用 APP_ENV 的值反推:否則主機忘了改檔裡的 APP_ENV,
     # 就會安靜地載到別的環境的設定。
     env_file:
       - ${ENV_FILE:-.env.local}
-    # 不對外開埠；由 frontend 的 nginx 以服務名 backend 代理 /api
-    # 用 python 而非 curl：bookworm-slim 沒有 curl/wget
+    # 不對外開埠,由 frontend nginx 代理 /api;healthcheck 用 python 因 bookworm-slim 無 curl
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 3s
@@ -24,8 +22,7 @@ services:
     build: ./frontend
     image: ${IMAGE:-${APP_NAME:-fullstack}}-frontend:${TAG:-latest}
     restart: unless-stopped
-    # 等 backend 真的能服務再起 nginx；只等「container 啟動」的話，
-    # uvicorn 尚未 listen 的那段時間 /api 會回 502
+    # 等 backend healthy 再起 nginx,否則 uvicorn 未 listen 前 /api 會回 502
     depends_on:
       backend:
         condition: service_healthy

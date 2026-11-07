@@ -1,53 +1,41 @@
 name: CI/CD
 
-# PR 與 main 只跑測試；只有 Release（vX.Y.Z tag）才 build image 推 GHCR，tag 原樣就是 image tag。
-# 只認這個形狀：「是 tag 就 build」的話，latest、wip 這類 tag 也會變成 image。
+# Trunk-based:PR 與 main 只跑測試;只有 Release(vX.Y.Z tag)才 build image 推 GHCR,tag 原樣就是 image tag。
+# 部署在目標主機 make deploy,詳見 docs/deployment.md。
 on:
   push:
     branches: [main]
+    # 只認 Release 的形狀:「是 tag 就 build」的話,latest、wip 這類 tag 也會變成 image
     tags: ['v[0-9]+.[0-9]+.[0-9]+']
   pull_request:
     branches: [main]
 
-# 同一個 ref 一次只跑一條；PR 例外：新 commit 直接取消舊 run。
+# 同一個 ref 一次只跑一條;PR 的新 commit 直接取消舊 run
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # ---------- CI：後端測試（PR / main / Release 都跑）----------
+  # 跑在 backend dev stage 容器裡,與本機 make test 同一套環境
   test-backend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - run: uv sync --frozen --dev
-      - run: uv run ruff check .
-      - run: uv run ruff format --check .
-      - run: uv run pytest -q
+      - run: docker build --target dev -t backend-test backend
+      - run: docker run --rm backend-test ruff check .
+      - run: docker run --rm backend-test ruff format --check .
+      - run: docker run --rm backend-test pytest -q
 
-  # ---------- CI：前端建置檢查 ----------
-  build-frontend:
+  # 前端只驗 build 得過
+  test-frontend-build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run build
+      - run: docker build frontend
 
-  # ========== Release：build 兩顆 image 推 GHCR（部署由人在主機上執行）==========
+  # 只有 Release 會產生 image;不指定 target,Docker 建最後一個 stage(runtime)
   build:
-    needs: [test-backend, build-frontend]
+    needs: [test-backend, test-frontend-build]
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
@@ -63,19 +51,17 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # 不指定 target：Docker 建最後一個 stage，也就是 runtime（見 backend/Dockerfile）
       - run: |
           for svc in backend frontend; do
             docker build --tag "$IMAGE-$svc:$TAG" "$svc"
             docker push "$IMAGE-$svc:$TAG"
           done
-
-      # 部署指令印在 run summary，tag 直接填好省得回頭查
+      # 部署指令印在 run summary,tag 直接填好省得回頭查
       - run: |
           {
             echo "### 部署 $TAG"
-            echo "在目標主機上執行："
+            echo "在目標主機上執行:"
             echo '```bash'
-            echo "make deploy ENV=<dev|qas|prd> IMAGE=$IMAGE TAG=$TAG"
+            echo "make deploy ENV=<dev|qas|prd> TAG=$TAG"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

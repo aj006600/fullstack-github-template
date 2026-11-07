@@ -13,6 +13,6 @@ def test_health():
 
 
 def test_message_reports_configured_env(monkeypatch):
-    # 改 settings 而非環境變數：settings 是 import 時就建立的單例，不會重讀 env
+    # 改 settings 而非環境變數:settings 是 import 時就建立的單例,不會重讀 env
     monkeypatch.setattr(settings, "app_env", "qas")
     assert client.get("/api/message").json()["env"] == "qas"
