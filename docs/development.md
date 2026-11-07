@@ -91,3 +91,26 @@ build 出來的每顆 image 都帶著它,連重 build 後沒名字(`<none>`)的�
 
 同一台機器上還有 `make deploy` 起的環境時,先 `make down ENV=<env>`:那些 image 也帶 label,
 container 還在就刪不掉,`make clean` 會停在那一步。`make down` 之後再跑一次就好。
+
+## Parallel development (worktree)
+
+一個 issue 一個 worktree,多個 worktree 可以同時開發、同時跑 `make dev` / `make test`。指令都從主 checkout 跑:
+
+```bash
+make worktree ISSUE=12 BRANCH=feat/login   # 開在 .claude/worktrees/<app>-issue-12,並複製主 checkout 的 .env.local
+cd .claude/worktrees/<app>-issue-12
+make test                                  # 與其他 worktree 同時跑也不會互相干擾
+PORT=8001 FRONTEND_PORT=3001 make dev      # 另一個 make dev 已佔用 8000 / 3000 時換埠
+cd - && make worktree-rm ISSUE=12          # 收工:有未 commit 或未 push 的東西會拒絕
+```
+
+為什麼不會互相干擾:
+
+- **container 與 network**:compose project 名取目錄名,每個 worktree 一套。
+- **image**:本機 build 的 tag 帶目錄名(`<app>-backend:local-<目錄名>`),同時 build 不會搶同一個名字。
+- **設定**:`.env.local` 從主 checkout 複製,機密跟得過去。
+
+branch 從 `origin/main` 開且不追蹤它(`--no-track`),不帶參數的 `git push` 不會推進 main;第一次 push 寫明
+`git push -u origin <branch>`。origin 上已有同名 branch 時,`make worktree` 接著它開。
+
+`make clean` 以專案 label 清 image,會連其他 worktree build 的一起清;正在跑的刪不掉,會停在那一步。

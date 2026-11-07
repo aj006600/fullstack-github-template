@@ -14,3 +14,6 @@
 !.env.example
 *.secret
 .DS_Store
+
+# make worktree 開的 worktree(一個 issue 一個)
+.claude/worktrees/

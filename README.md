@@ -10,7 +10,7 @@
 
 | 想做的事 | 看這份 |
 |----------|--------|
-| **本機開發**(quickstart、hot reload、測試、清理) | [docs/development.md](docs/development.md) |
+| **本機開發**(quickstart、hot reload、測試、清理、worktree) | [docs/development.md](docs/development.md) |
 | **CI/CD 與部署**(Release、promote、rollback、機密、GitHub 設定) | [docs/deployment.md](docs/deployment.md) |
 
 ## Make it yours
@@ -47,7 +47,7 @@
 ├── compose.dev.yaml        # 本機開發覆寫:開 localhost 埠 + 後端 hot reload
 ├── compose.deploy.yaml     # 部署覆寫:frontend 綁主機 HTTP_PORT + log 輪替
 ├── .env.example            # 本機設定範本(進版控);make dev 會複製成 .env.local
-├── Makefile                # dev / test·lint·format / clean / deploy·down / ps
+├── Makefile                # dev / test·lint·format / clean / deploy·down / ps / worktree
 ├── .github/workflows/ci-cd.yml  # test → Release tag(vX.Y.Z)才 build 推 GHCR
 └── docs/                   # development.md · deployment.md
 ```

@@ -1,4 +1,5 @@
 # 本機開發 override:make dev → localhost:3000 / :8000,後端 hot reload。
+# 撞埠(例如另一個 worktree 也在跑 make dev)時從 shell 換:PORT=8001 FRONTEND_PORT=3001 make dev
 services:
   backend:
     build:
@@ -8,8 +9,8 @@ services:
       - ./backend/app:/app/app
       - ./backend/tests:/app/tests
     ports:
-      - "8000:8000"
+      - "${PORT:-8000}:8000"
 
   frontend:
     ports:
-      - "3000:80"
+      - "${FRONTEND_PORT:-3000}:80"
