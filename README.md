@@ -4,7 +4,7 @@
 以 docker compose 編排,GitHub Actions 遵循 trunk-based +「build 一次、依序 promote」。
 
 > 核心原則(12-factor):**一份程式碼、一組 image、設定隨環境變**。設定契約一律是環境變數:
-> 本機讀 `.env.local`(從 `.env.example` 複製,不進版控),目標主機讀自備的 `.env.<env>`。
+> 本機讀 `.env`(從 `.env.example` 複製,不進版控),目標主機讀自備的 `.env.<env>`。
 
 ## Docs
 
@@ -24,7 +24,7 @@
    NAME=<your-app>
    git ls-files -z | xargs -0 perl -pi -e "s/fullstack-github-template/$NAME/g; s/fullstack/$NAME/g"
    ```
-3. **加自己的設定變數**:`.env.example` 是變數清單(進版控),新增變數先加在這裡;本機實際讀的 `.env.local` 由 `make dev` 自動建立,不必手動處理。
+3. **加自己的設定變數**:`.env.example` 是變數清單(進版控),新增變數先加在這裡;本機實際讀的 `.env` 由 `make local` 自動建立,不必手動處理。
 4. **換上自己的 README**——`rm README.md` 後為專案寫專屬的。
 5. **commit、push**。第一次出貨:`git tag v0.1.0 && git push origin v0.1.0`,見 [docs/deployment.md](docs/deployment.md)。
 
@@ -44,9 +44,9 @@
 │   ├── src/App.jsx · nginx.conf(供靜態檔 + 反向代理 /api)
 │   └── package.json · package-lock.json · Dockerfile
 ├── compose.yaml            # base:只定義服務與內部接線
-├── compose.dev.yaml        # 本機開發覆寫:開 localhost 埠 + 後端 hot reload
+├── compose.local.yaml        # 本機開發覆寫:開 localhost 埠 + 後端 hot reload
 ├── compose.deploy.yaml     # 部署覆寫:frontend 綁主機 HTTP_PORT + log 輪替
-├── .env.example            # 本機設定範本(進版控);make dev 會複製成 .env.local
+├── .env.example            # 本機設定範本(進版控);make local 會複製成 .env
 ├── Makefile                # dev / test·lint·format / clean / deploy·down / ps / worktree
 ├── .github/workflows/ci-cd.yml  # test → Release tag(vX.Y.Z)才 build 推 GHCR
 └── docs/                   # development.md · deployment.md

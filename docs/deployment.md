@@ -5,7 +5,7 @@ CI/CD 流程與目標主機(VM)上的部署操作。
 ## 全流程(trunk-based, build once promote many)
 
 ```
-本機開發 → make dev 驗證 → feature branch → PR 合進 main(CI:test)
+本機開發 → make local 驗證 → feature branch → PR 合進 main(CI:test)
     → 打 Release tag:git tag v0.1.0 && git push origin v0.1.0
     → CI:test → build(推 :v0.1.0 到 GHCR)
     → VM:make deploy ENV=<env> TAG=v0.1.0 拉指定版本啟動
@@ -64,7 +64,7 @@ $EDITOR .env.prd     # APP_ENV 改成 prd、LOG_LEVEL 改 info、設好 HTTP_POR
 
 `APP_ENV` 只影響 app 自報的環境名;載哪個檔由 `make deploy` 的 `ENV` 決定,不會因為忘了改而載錯檔。
 
-變數名與本機 `.env.local` 完全一致,程式不必為環境分支。
+變數名與本機 `.env` 完全一致,程式不必為環境分支。
 
 ## 對外埠
 

@@ -9,7 +9,7 @@
 **/node_modules/
 **/dist/
 
-# env 檔一律不進版控(本機 .env.local、主機 .env.<env>),只有範本例外
+# env 檔一律不進版控(本機 .env、主機 .env.<env>),只有範本例外
 .env*
 !.env.example
 *.secret
