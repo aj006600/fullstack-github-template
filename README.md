@@ -30,9 +30,6 @@
 
 > 這個 template repo 本身**停用了 GitHub Actions**:`.github/workflows/` 是給開出來的新專案用的,
 > 改 template 時在本機跑 `make test`、`make lint` 驗證。
->
-> template 刻意不帶 agent 設定(`CLAUDE.md`、`.claude/`、`docs/agents/`、`CONTEXT.md`):
-> 要用 Claude Code 協作時,照 [oh-my-claude-setup](https://github.com/aj006600/oh-my-claude-setup/tree/main/claude-code-setup-v2) 的步驟裝進新專案。
 
 ## Structure
 
