@@ -2,12 +2,15 @@
 # README 標題、頁面 title 沒有插值能力，是寫死的——開新專案時用 README「Make it yours」的指令一起換。
 APP_NAME := fullstack
 
+# CI 推到 ghcr.io/<owner>/<repo>：repo 名與 APP_NAME 相同時對得上，不同就改這行
+IMAGE ?= ghcr.io/aj006600/$(APP_NAME)
+
 DEV := -f compose.yaml -f compose.dev.yaml
 
 # 註解不可寫在同一行：Make 會把 # 之前的空白一起吃進變數值
 ENV ?= dev
 
-ENVS := dev qas prod
+ENVS := dev qas prd
 # 由主機自備、不進版控。同一個變數同時餵 compose 插值（HTTP_PORT）與 backend 的 env_file，
 # 兩邊不可能指到不同檔案。
 ENV_FILE := .env.$(ENV)
@@ -16,6 +19,8 @@ PROJECT  := COMPOSE_PROJECT_NAME=$(APP_NAME)-$(ENV) APP_NAME=$(APP_NAME) ENV_FIL
 
 # 打錯 ENV 時給明確訊息，而不是 compose 的 "no such file"
 guard = @test -n "$(filter $(ENV),$(ENVS))" || { echo "ENV=$(ENV) 無效。可用：$(ENVS)"; exit 1; }
+# TAG 不給預設值：要拉哪個 Release 得寫出來
+guard-tag = @test -n "$(TAG)" || { echo "TAG 必填。例：make deploy ENV=$(ENV) TAG=v1.2.0"; exit 1; }
 
 .PHONY: help dev dev-down test lint format down deploy ps logs
 
@@ -26,10 +31,10 @@ help:
 	@echo "  make test | lint | format         跑在 dev stage 容器裡（CI 走 runner，共用 uv.lock）"
 	@echo ""
 	@echo "Deployment（在目標主機上，需自備 .env.<env>）"
-	@echo "  make deploy  ENV=… IMAGE=… TAG=…  拉 CI 測過的映像，不重 build"
+	@echo "  make deploy  ENV=… TAG=<vX.Y.Z>   拉該 Release 的 image 並啟動，不重 build"
 	@echo "  make down    ENV=…                停止該環境"
 	@echo ""
-	@echo "  ENV = dev | qas | prod            （預設 $(ENV)）"
+	@echo "  ENV = dev | qas | prd             （預設 $(ENV)）"
 	@echo ""
 	@echo "Inspection"
 	@echo "  make ps                           正在跑的 container（名稱 / 狀態 / 埠）"
@@ -75,10 +80,10 @@ format:
 	$(RUNDEV) ruff format .
 
 # ── Deployment ──
-# 刻意沒有「本機 build 後部署」的 target：在主機上重 build 會破壞「dev 測過的就是上 prod 的那顆」。
+# 刻意沒有「本機 build 後部署」的 target：在主機上重 build 會破壞「dev 測過的就是上 prd 的那顆」。
 deploy:
 	$(guard)
-	@test -n "$(IMAGE)" && test -n "$(TAG)" || { echo "需要 IMAGE 與 TAG，例：make deploy ENV=dev IMAGE=ghcr.io/<帳號>/<repo> TAG=<sha>"; exit 1; }
+	$(guard-tag)
 	IMAGE=$(IMAGE) TAG=$(TAG) $(PROJECT) docker compose $(STACK) pull
 	IMAGE=$(IMAGE) TAG=$(TAG) $(PROJECT) docker compose $(STACK) up -d --no-build
 

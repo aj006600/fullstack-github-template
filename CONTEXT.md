@@ -7,7 +7,7 @@
 ### Environment and configuration
 
 **Environment**:
-dev / qas / prod 三者之一，由 `make deploy` 的 `ENV` 選定。「是哪個環境」= 主機上載入了哪份 `.env.<env>`，
+dev / qas / prd 三者之一，由 `make deploy` 的 `ENV` 選定。「是哪個環境」= 主機上載入了哪份 `.env.<env>`，
 不是哪顆 image。本機 `make dev` 不屬於任何 environment：它讀 `.env.local`，`APP_ENV=local`。
 _Avoid_: 階段、stage（`stage` 專指 Dockerfile 的建置階段）
 
@@ -22,21 +22,23 @@ runtime stage 出貨、非 root；dev stage 含 pytest 與 ruff，只給本機�
 
 ### Deployment and versions
 
-**`:sha`**:
-以 git commit SHA 為標籤的映像，CI 在每個 main commit 上建立，是版本的真相來源。
+**Release**:
+形如 `vX.Y.Z` 的 git tag。只有 Release 會 build image，tag 原樣就是 image tag，一次 Release 是
+backend 與 frontend 兩顆同 tag 的 image。merge 到 main 只跑測試，不產生 image。
 registry 上**沒有** `latest`——`compose.yaml` 的 `${TAG:-latest}` 只是本機 build 的預設標籤。
+_Avoid_: 發版號、version（單講 version 分不出是 git tag 還是 package 版本）
 
 **Deployment**:
-在**目標主機**上拉 CI 建好的 `:sha` 並啟動（`make deploy`），不在主機上從原始碼 build。
+在**目標主機**上拉某個 Release 的 image 並啟動（`make deploy`），不在主機上從原始碼 build。
 _Avoid_: 部署到本機（`make dev` 是開發，不是 deployment）
 
 **Promotion**:
-把**同一顆** `:sha` 帶到下一個 environment 再跑一次 `make deploy`，不重新 build。
+把**同一個** Release 帶到下一個 environment 再跑一次 `make deploy`，不重新 build。人工執行，沒有 CI job。
 _Avoid_: 重新部署、rebuild
 
 **Rollback**:
-帶先前的 `:sha` 重跑 `make deploy`。系統無狀態時才這麼對稱——有了資料庫 schema 之後，
-程式碼回得去，migration 過的資料回不去。
+帶先前的 Release 重跑 `make deploy`。系統無狀態時才這麼對稱——有了資料庫 migration 之後，
+舊版可能認不得新版的 schema 而起不來，這時回到舊行為要發一個修正版 Release。
 _Avoid_: 復原、還原（那些是資料層的事；rollback 只講 image 版本）
 
 ### Observability
