@@ -1,4 +1,6 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS base
+# 專案 label:make clean 只清帶它的 image;dev / runtime 從 base 繼承
+LABEL org.opencontainers.image.title="fullstack"
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 ENV PATH="/app/.venv/bin:$PATH"

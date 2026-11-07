@@ -60,3 +60,34 @@ make ps                                  # 正在跑的 container(名稱 / 狀�
 docker compose -f compose.yaml -f compose.dev.yaml logs -f backend   # 追後端 log
 docker compose -f compose.yaml -f compose.dev.yaml exec backend sh   # 進容器
 ```
+
+## Cleanup
+
+磁碟被 Docker 吃滿時,回收這個專案佔掉的空間(設定檔 `.env.local` 不會被碰):
+
+```bash
+make clean     # make dev 的 container / volume / network + 本專案的 image + 沒人在用的 build cache
+```
+
+**堆積來源**:
+
+| 堆積物 | 怎麼來的 |
+|--------|---------|
+| build cache | build 的中間結果(`uv sync`、`npm ci` 裝好的套件)存起來讓下次快,通常是最大宗 |
+| 沒名字的舊 image | 重 build 同一個 tag,新 image 拿走名字,舊的變成 `<none>` 卻沒被刪 |
+| 沒 down 的 container | `make dev` 按 Ctrl+C 只是停下來,container 與 network 都還在 |
+
+**怎麼認出這個專案的東西**:每個 Dockerfile 都有一行專案 label(`org.opencontainers.image.title`),
+build 出來的每顆 image 都帶著它,連重 build 後沒名字(`<none>`)的舊 image 也是。`make clean` 只刪帶這個 label 的,
+不比對 image 名字——`shop` 與 `shop-admin` 這種名字相近的專案才不會互刪。
+
+**build cache 沒有 label**,沒辦法按專案挑。`make clean` 先把本專案的 image 全刪掉,它的 cache 就變成沒人在用,
+最後一步 `docker builder prune` 把沒人在用的 cache 丟掉。別的專案同樣沒人在用的 cache 也會一起丟——
+它們下次 build 慢一點,不會壞——這是 `make clean` 唯一不限於本專案的地方。
+
+**什麼時候跑**:磁碟告警的時候,或改完 `Dockerfile` / `uv.lock` 想確認從乾淨狀態 build 得起來。
+日常收工用 `make dev-down` 就好——它只停 container、留 image,下次 `make dev` 才起得快;
+`make clean` 之後的第一次 `make dev` 要從頭 build,會等好幾分鐘。
+
+同一台機器上還有 `make deploy` 起的環境時,先 `make down ENV=<env>`:那些 image 也帶 label,
+container 還在就刪不掉,`make clean` 會停在那一步。`make down` 之後再跑一次就好。
