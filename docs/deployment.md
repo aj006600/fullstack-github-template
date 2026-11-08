@@ -15,12 +15,15 @@ CI/CD 流程與目標主機(VM)上的部署操作。
 只有 Release(`vX.Y.Z` tag)會 build image,tag 原樣就是 image tag;PR 與 main 只跑測試,
 其他形狀的 tag(`latest`、`wip`)不觸發 CI。
 
+image 同時含 **amd64 與 arm64**(arm64 那半在 CI 上用 QEMU 模擬 build,慢幾分鐘,只在 Release 時付這個時間),
+`docker pull` 會自動挑主機的架構。
+
 backend 的 runtime stage 要到打 tag 才會被 build(PR 與 main 只 build dev stage 跑測試):
 改了 `backend/Dockerfile` 或相依,打 tag 前在本機跑一次 `docker compose build` 確認。
 
 ## 在 VM 上部署
 
-前置:VM 是 amd64 Linux(CI 只建 amd64),裝好 docker + compose plugin;package 不是 public 的話,
+前置:VM 是 Linux(amd64 或 arm64 都可以;Apple Silicon 的 Mac 也拉得到,可以拿來試部署流程),裝好 docker + compose plugin;package 不是 public 的話,
 用有 `read:packages` 權限的 PAT 登入 GHCR 一次:
 
 ```bash
