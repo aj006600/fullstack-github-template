@@ -48,12 +48,27 @@ make local-down  # 停止並清理 container 與 network
 ## 測試與品質
 
 ```bash
-make test      # pytest
-make lint      # ruff check
-make format    # ruff format(就地改檔)
+make test                             # 完整套 pytest,跟 CI 一樣
+make test ARGS="tests/test_main.py"   # 只跑一個檔
+make test ARGS="-k health"            # 只跑名字符合的測試
+make lint                             # ruff check
+make format                           # ruff format(就地改檔)
 ```
 
 都跑在 backend 的 dev stage 容器裡,跟 CI 的 `test-backend` job 同一顆 image——本機過了 CI 就會過。
+
+### Testing workflow
+
+本機跑一次、CI 再跑一次是刻意的,兩次回答的問題不同:本機答「我剛改的有沒有弄壞」,
+CI 在乾淨的機器上對**合併後的結果**跑完整套,答「合進 main 能不能用」——CI 不信任本機的結果,那次不能省。
+能省的是本機那次的**範圍**:
+
+1. **開發中**只跑跟改動相關的測試,幾秒一輪。`tests/` 鏡射 `app/` 的結構,改 `app/x.py` 就跑
+   `make test ARGS="tests/test_x.py"`;修一個紅的測試就 `ARGS="-k <測試名>"`。
+2. **commit 前**跑 `make lint`,幾秒。
+3. **push、開 PR**,CI 跑完整套,不用等它,繼續做別的;紅了再回來修。
+
+只有改到共用的東西(相依、設定、conftest / 共用 fixture、跨多個模組)或不確定影響範圍時,才在 push 前跑一次完整的 `make test`。
 
 ## 常用檢查
 

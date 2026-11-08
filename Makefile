@@ -37,7 +37,8 @@ help:
 	@echo "  make local                        hot reload、localhost:3000 / :8000(前景執行;撞埠時 PORT / FRONTEND_PORT 從 shell 換)"
 	@echo "  make local-down                   停止並清理 make local 的 container 與 network"
 	@echo "  make compose ARGS=\"...\"           對 make local 那組 container 下任何 compose 子命令(logs -f backend、exec backend sh …)"
-	@echo "  make test | lint | format         跑在 backend dev stage 容器裡(與 CI 同一套環境)"
+	@echo "  make test [ARGS=\"...\"]           pytest,跑在 backend dev stage 容器裡(與 CI 同一套環境);ARGS 只跑一部分,例 ARGS=\"tests/test_main.py\" 或 ARGS=\"-k health\""
+	@echo "  make lint | format                ruff check / ruff format(就地改檔)"
 	@echo "  make clean                        回收本專案的 container / volume / network、image 與 build cache"
 	@echo ""
 	@echo "Deployment(在目標主機上,需自備 .env.<env>)"
@@ -79,8 +80,9 @@ RUNDEV = TAG=$(LOCAL_TAG) docker compose $(LOCAL) run --build --rm \
 	-e PYTEST_ADDOPTS="-p no:cacheprovider" \
 	backend
 
+# ARGS 原樣交給 pytest:開發中只跑跟改動相關的那幾個,完整套交給 CI(docs/development.md 的 Testing workflow)
 test:
-	$(RUNDEV) pytest
+	$(RUNDEV) pytest $(ARGS)
 
 lint:
 	$(RUNDEV) ruff check .
