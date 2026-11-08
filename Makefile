@@ -5,6 +5,9 @@ APP_NAME := fullstack
 IMAGE ?= ghcr.io/aj006600/$(APP_NAME)
 
 LOCAL := -f compose.yaml -f compose.local.yaml
+# shell 裡殘留的 COMPOSE_PROJECT_NAME 會蓋掉「project 名取目錄名」:所有 worktree 擠進同一組 container,
+# worktree-rm 也收不到正確的那組。一律不帶給 compose(deploy / down 在 recipe 裡自己明寫)
+unexport COMPOSE_PROJECT_NAME
 
 # 本機 build 的 image tag 帶 checkout 目錄名:多個 worktree 同時 make local / make test 才不會搶同一個名字、
 # 跑到別人的程式碼。container 與 network 本來就各自分開(compose project 名取目錄名)
@@ -27,12 +30,13 @@ guard = @test -n "$(filter $(ENV),$(ENVS))" || { echo "ENV=$(ENV) 無效。可�
 # TAG 不給預設值:要拉哪個 Release 得寫出來
 guard-tag = @test -n "$(TAG)" || { echo "TAG 必填。例:make deploy ENV=$(ENV) TAG=v1.2.0"; exit 1; }
 
-.PHONY: help local local-down test lint format deploy down ps clean worktree worktree-rm
+.PHONY: help local local-down compose test lint format deploy down ps clean worktree worktree-rm
 
 help:
 	@echo "Local(在你的開發機上)"
 	@echo "  make local                        hot reload、localhost:3000 / :8000(前景執行;撞埠時 PORT / FRONTEND_PORT 從 shell 換)"
 	@echo "  make local-down                   停止並清理 make local 的 container 與 network"
+	@echo "  make compose ARGS=\"...\"           對 make local 那組 container 下任何 compose 子命令(logs -f backend、exec backend sh …)"
 	@echo "  make test | lint | format         跑在 backend dev stage 容器裡(與 CI 同一套環境)"
 	@echo "  make clean                        回收本專案的 container / volume / network、image 與 build cache"
 	@echo ""
@@ -53,13 +57,17 @@ help:
 	cp .env.example $@
 
 # 這些 target 都會讓 compose 解析 backend 的 env_file(= .env),缺檔就直接報錯
-local local-down test lint format: .env
+local local-down compose test lint format: .env
 
 local:
 	APP_NAME=$(APP_NAME) TAG=$(LOCAL_TAG) docker compose $(LOCAL) up --build
 
 local-down:
 	docker compose $(LOCAL) down
+
+# 帶同一組 -f 與 TAG:手打 docker compose 少了 TAG 會 build 成 :latest,跟 make local 用的不是同一顆 image
+compose:
+	APP_NAME=$(APP_NAME) TAG=$(LOCAL_TAG) docker compose $(LOCAL) $(ARGS)
 
 # ── Tests and quality ──
 # 與 CI test-backend 同一顆 dev stage image。--build:pyproject / uv.lock 烤在 image 裡,不重建會用舊設定。

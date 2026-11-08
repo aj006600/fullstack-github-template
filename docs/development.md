@@ -14,6 +14,8 @@ make local-down  # 停止並清理 container 與 network
 - 前端 → http://localhost:3000(頁面會顯示 backend 回傳的環境 `local`,證明接通了)
 - 後端 → http://localhost:8000/health
 
+兩個埠只發佈到 loopback(`127.0.0.1`),同一個網路上的別台機器連不到。在遠端主機上開發時,用 SSH 或 VS Code 把埠轉接到自己的電腦。
+
 前後端怎麼溝通:瀏覽器只打 frontend,`/api/*` 由 frontend 的 nginx 反向代理到 backend(同源、免 CORS)。
 
 ```
@@ -57,8 +59,14 @@ make format    # ruff format(就地改檔)
 
 ```bash
 make ps                                  # 正在跑的 container(名稱 / 狀態 / 埠)
-docker compose -f compose.yaml -f compose.local.yaml logs -f backend   # 追後端 log
-docker compose -f compose.yaml -f compose.local.yaml exec backend sh   # 進容器
+make compose ARGS="logs -f backend"       # 追後端 log
+make compose ARGS="exec backend sh"       # 進容器
+```
+
+`make compose` 對 `make local` 那組 container 下任何 compose 子命令,帶的是同一組 compose 檔與 image tag。
+
+```bash
+PORT=8001 FRONTEND_PORT=3001 make local   # 撞埠時換埠(只從 shell 給,不寫進 .env)
 ```
 
 ## Cleanup

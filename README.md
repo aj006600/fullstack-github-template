@@ -47,7 +47,7 @@
 ├── compose.local.yaml        # 本機開發覆寫:開 localhost 埠 + 後端 hot reload
 ├── compose.deploy.yaml     # 部署覆寫:frontend 綁主機 HTTP_PORT + log 輪替
 ├── .env.example            # 本機設定範本(進版控);make local 會複製成 .env
-├── Makefile                # dev / test·lint·format / clean / deploy·down / ps / worktree
+├── Makefile                # local·compose / test·lint·format / clean / deploy·down / ps / worktree
 ├── .github/workflows/ci-cd.yml  # test → Release tag(vX.Y.Z)才 build 推 GHCR
 └── docs/                   # development.md · deployment.md
 ```
