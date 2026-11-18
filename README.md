@@ -48,6 +48,7 @@
 ├── compose.deploy.yaml     # 部署覆寫:frontend 綁主機 HTTP_PORT + log 輪替
 ├── .env.example            # 本機設定範本(進版控);make local 會複製成 .env
 ├── Makefile                # local·compose / test·lint·format / clean / deploy·down / ps / worktree
+├── CLAUDE.md · .claude/    # coding agent 的規則與 guard hooks
 ├── .github/workflows/ci-cd.yml  # test → Release tag(vX.Y.Z)才 build 推 GHCR
 └── docs/                   # development.md · deployment.md
 ```
